@@ -1,3 +1,7 @@
+// Package slurm provides a sidecar plugin for interLink that enables Kubernetes pods
+// to be executed on SLURM batch systems using container runtimes like Singularity or Enroot.
+// It translates Kubernetes pod specifications into SLURM batch scripts and manages the
+// complete lifecycle of container execution on HPC clusters.
 package slurm
 
 import (
@@ -28,10 +32,12 @@ import (
 	trace "go.opentelemetry.io/otel/trace"
 )
 
+// SidecarHandler manages the SLURM sidecar operations, maintaining configuration,
+// job ID mappings, and execution context for all pod-to-SLURM job translations.
 type SidecarHandler struct {
-	Config SlurmConfig
-	JIDs   *map[string]*JidStruct
-	Ctx    context.Context
+	Config SlurmConfig            // SLURM configuration settings
+	JIDs   *map[string]*JidStruct // Maps pod UIDs to SLURM job IDs
+	Ctx    context.Context        // Context for request lifecycle management
 }
 
 var (
@@ -40,20 +46,26 @@ var (
 	cachedStatus []commonIL.PodStatus
 )
 
+// JidStruct represents the mapping between a Kubernetes pod and its corresponding SLURM job,
+// tracking timing information for job lifecycle management.
 type JidStruct struct {
-	PodUID       string    `json:"PodUID"`
-	PodNamespace string    `json:"PodNamespace"`
-	JID          string    `json:"JID"`
-	StartTime    time.Time `json:"StartTime"`
-	EndTime      time.Time `json:"EndTime"`
+	PodUID       string    `json:"PodUID"`       // Unique identifier of the Kubernetes pod
+	PodNamespace string    `json:"PodNamespace"` // Namespace where the pod is running
+	JID          string    `json:"JID"`          // SLURM job ID assigned to this pod
+	StartTime    time.Time `json:"StartTime"`    // When the SLURM job started execution
+	EndTime      time.Time `json:"EndTime"`      // When the SLURM job finished execution
 }
 
+// ResourceLimits defines the computational resource constraints for a SLURM job,
+// derived from Kubernetes pod resource specifications.
 type ResourceLimits struct {
-	CPU    int64
-	Memory int64
+	CPU    int64 // Number of CPU cores requested
+	Memory int64 // Memory in bytes requested
 }
 
-// stringToHex encodes the provided str string into a hex string and removes all trailing redundant zeroes to keep the output more compact
+// stringToHex encodes the provided string into a hex string and removes all trailing redundant zeroes
+// to keep the output more compact. This is used to create unique environment variable names
+// from file paths when mounting ConfigMaps and Secrets in non-shared filesystem mode.
 func stringToHex(str string) string {
 	var buffer bytes.Buffer
 	for _, char := range str {
@@ -75,8 +87,9 @@ func stringToHex(str string) string {
 	return hexReturn
 }
 
-// parsingTimeFromString parses time from a string and returns it into a variable of type time.Time.
-// The format time can be specified in the 3rd argument.
+// parsingTimeFromString parses a time string and returns it as a time.Time value.
+// The format parameter specifies the expected time format (e.g., "2006-01-02 15:04:05.999999999 -0700 MST").
+// It validates that the string contains exactly 4 space-separated fields before parsing.
 func parsingTimeFromString(Ctx context.Context, stringTime string, timestampFormat string) (time.Time, error) {
 	parts := strings.Fields(stringTime)
 	if len(parts) != 4 {
@@ -94,7 +107,9 @@ func parsingTimeFromString(Ctx context.Context, stringTime string, timestampForm
 	return parsedTime, nil
 }
 
-// CreateDirectories is just a function to be sure directories exists at runtime
+// CreateDirectories ensures that the data root folder specified in the configuration exists.
+// It creates the directory structure with appropriate permissions if it doesn't already exist.
+// This is called during sidecar initialization to prepare the working directory for job data.
 func (h *SidecarHandler) CreateDirectories() error {
 	path := h.Config.DataRootFolder
 	if _, err := os.Stat(path); err != nil {
@@ -108,9 +123,10 @@ func (h *SidecarHandler) CreateDirectories() error {
 	return nil
 }
 
-// LoadJIDs loads Job IDs into the main JIDs struct from files in the root folder.
-// It's useful went down and needed to be restarded, but there were jobs running, for example.
-// Return only error in case of failure
+// LoadJIDs restores the job ID mappings from persistent storage in the data root folder.
+// This is essential for recovering state after a sidecar restart, allowing the sidecar to
+// continue managing jobs that were submitted before the restart. Each subdirectory in the
+// data root folder represents a pod, containing files with job metadata (JobID, PodUID, etc.).
 func (h *SidecarHandler) LoadJIDs() error {
 	path := h.Config.DataRootFolder
 
@@ -233,8 +249,10 @@ func createEnvFile(Ctx context.Context, config SlurmConfig, podData commonIL.Ret
 	return envs, envs_data, nil
 }
 
-// prepareEnvs reads all Environment variables from a container and append them to a envfile.properties. The values are sh-escaped.
-// It returns the slice containing, if there are Environment variables, the arguments for envfile and its path, or else an empty array.
+// prepareEnvs processes environment variables from a container specification and writes them
+// to a properties file that will be mounted into the container. All values are shell-escaped
+// to prevent injection attacks. Returns container runtime flags to mount the env file, or an
+// empty slice if no environment variables are defined.
 func prepareEnvs(Ctx context.Context, config SlurmConfig, podData commonIL.RetrievedPodData, container v1.Container) []string {
 	start := time.Now().UnixMicro()
 	span := trace.SpanFromContext(Ctx)
@@ -353,12 +371,11 @@ func prepareMountsSimpleVolume(
 	return nil
 }
 
-// prepareMounts iterates along the struct provided in the data parameter and checks for ConfigMaps, Secrets and EmptyDirs to be mounted.
-// For each element found, the mountData function is called.
-// In this context, the general case is given by host and container not sharing the file system, so data are stored within ENVS with matching names.
-// The content of these ENVS will be written to a text file by the generated SLURM script later, so the container will be able to mount these files.
-// The command to write files is appended in the global "prefix" variable.
-// It returns a string composed as the singularity --bind command to bind mount directories and files and the first encountered error.
+// prepareMounts processes all volume mounts for a container, handling ConfigMaps, Secrets, EmptyDirs,
+// Projected volumes, and HostPath volumes. It generates the appropriate mount flags for the container
+// runtime (Singularity or Enroot). For non-shared filesystems, data is stored in environment variables
+// and written to files by the SLURM script. For shared filesystems, files are created directly.
+// Returns a string with runtime-specific mount flags and any error encountered.
 func prepareMounts(
 	Ctx context.Context,
 	config SlurmConfig,
@@ -528,10 +545,12 @@ func prepareMounts(
 	return mountedData, nil
 }
 
-// produceSLURMScript generates a SLURM script according to data collected.
-// It must be called after ENVS and mounts are already set up since
-// it relies on "prefix" variable being populated with needed data and ENVS passed in the commands parameter.
-// It returns the path to the generated script and the first encountered error.
+// produceSLURMScript generates the SLURM batch script (job.slurm) and accompanying shell script (job.sh)
+// that will execute the pod's containers. The batch script contains SLURM directives (#SBATCH) for
+// resource allocation, while the shell script contains the actual container execution commands.
+// It handles init containers (executed sequentially) and regular containers (executed in parallel),
+// creates emptyDir directories, sets up probes, and manages the cleanup logic.
+// Returns the path to the generated SLURM batch script and any error encountered.
 func produceSLURMScript(
 	Ctx context.Context,
 	config SlurmConfig,
@@ -559,6 +578,20 @@ func produceSLURMScript(
 		log.G(Ctx).Info("-- Created directory " + path)
 	}
 	postfix := ""
+
+	// Create emptyDir directories in the job.sh script
+	// This ensures they exist on the compute node before containers start
+	// Note: We'll add these commands to stringToBeWritten later, after workingPath is exported
+	emptyDirPaths := make(map[string]string)
+	for _, vol := range pod.Spec.Volumes {
+		if vol.EmptyDir != nil {
+			edPath := filepath.Join(path, "emptyDirs", vol.Name)
+			if _, exists := emptyDirPaths[vol.Name]; !exists {
+				emptyDirPaths[vol.Name] = edPath
+				log.G(Ctx).Debug("-- Will create emptyDir: ", edPath)
+			}
+		}
+	}
 
 	fJob, err := os.Create(path + "/job.slurm")
 	if err != nil {
@@ -833,6 +866,18 @@ highestExitCode=0
 	stringToBeWritten.WriteString(path)
 	stringToBeWritten.WriteString("\n")
 
+	// Create emptyDir directories on the compute node
+	// This ensures they exist before any containers start
+	if len(emptyDirPaths) > 0 {
+		stringToBeWritten.WriteString("\n# Create emptyDir volumes\n")
+		for volName, edPath := range emptyDirPaths {
+			stringToBeWritten.WriteString("mkdir -p \"")
+			stringToBeWritten.WriteString(edPath)
+			stringToBeWritten.WriteString("\"\n")
+			log.G(Ctx).Debug("-- Added emptyDir creation command for volume: ", volName, " at path: ", edPath)
+		}
+	}
+
 	// Generate probe cleanup script first if any probes exist
 	var hasProbes bool
 	for _, containerCommand := range commands {
@@ -958,9 +1003,10 @@ highestExitCode=0
 	return fJob.Name(), nil
 }
 
-// SLURMBatchSubmit submits the job provided in the path argument to the SLURM queue.
-// At this point, it's up to the SLURM scheduler to manage the job.
-// Returns the output of the sbatch command and the first encoundered error.
+// SLURMBatchSubmit submits a SLURM batch script to the scheduler using the sbatch command.
+// The path parameter should point to the job.slurm file generated by produceSLURMScript.
+// Returns the sbatch command output (which includes the assigned job ID) and any error encountered.
+// After successful submission, the SLURM scheduler takes over job management.
 func SLURMBatchSubmit(Ctx context.Context, config SlurmConfig, path string) (string, error) {
 	log.G(Ctx).Info("- Submitting Slurm job")
 	shell := exec2.ExecTask{
@@ -985,13 +1031,11 @@ func SLURMBatchSubmit(Ctx context.Context, config SlurmConfig, path string) (str
 	return string(execReturn.Stdout), nil
 }
 
-// handleJidAndPodUid creates a JID file to store the Job ID of the submitted job.
-// The output parameter must be the output of SLURMBatchSubmit function and the path
-// is the path where to store the JID file.
-// It also adds the JID to the JIDs main structure.
-// Finally, it stores the namespace and podUID info in the same location, to restore
-// status at startup.
-// Return the first encountered error.
+// handleJidAndPodUid extracts the SLURM job ID from sbatch output and persists the mapping
+// between the pod and job ID. It creates three files (JobID.jid, PodUID.uid, PodNamespace.ns)
+// for state recovery, and updates the in-memory JIDs map. The output parameter should contain
+// the sbatch command output in the format "Submitted batch job <JID>".
+// Returns the extracted job ID and any error encountered.
 func handleJidAndPodUid(Ctx context.Context, pod v1.Pod, JIDs *map[string]*JidStruct, output string, path string) (string, error) {
 	r := regexp.MustCompile(`Submitted batch job (?P<jid>\d+)`)
 	jid := r.FindStringSubmatch(output)
@@ -1040,14 +1084,17 @@ func handleJidAndPodUid(Ctx context.Context, pod v1.Pod, JIDs *map[string]*JidSt
 	return (*JIDs)[string(pod.UID)].JID, nil
 }
 
-// removeJID delete a JID from the structure
+// removeJID removes a job ID mapping from the in-memory JIDs map using the pod UID as the key.
+// This is called when a pod is deleted or its job is cancelled.
 func removeJID(podUID string, JIDs *map[string]*JidStruct) {
 	delete(*JIDs, podUID)
 }
 
-// deleteContainer checks if a Job has not yet been deleted and, in case, calls the scancel command to abort the job execution.
-// It then removes the JID from the main JIDs structure and all the related files on the disk.
-// Returns the first encountered error.
+// deleteContainer cancels a running SLURM job using scancel and cleans up all associated files.
+// It checks if the job exists in the JIDs map before attempting cancellation, then removes the
+// job ID mapping and deletes the working directory containing job scripts, logs, and metadata.
+// The function attempts deletion twice with a 5-second delay to handle cases where log files
+// may still be open. Returns any error encountered during the cleanup process.
 func deleteContainer(Ctx context.Context, config SlurmConfig, podUID string, JIDs *map[string]*JidStruct, path string) error {
 	log.G(Ctx).Info("- Deleting Job for pod " + podUID)
 	span := trace.SpanFromContext(Ctx)
@@ -1267,30 +1314,25 @@ func mountData(Ctx context.Context, config SlurmConfig, container *v1.Container,
 			if volume.EmptyDir != nil {
 				log.G(Ctx).Debugf("in mountData() volume found: %s type: emptyDir", volumeMount.Name)
 
-				var edPath string
-				edPath = filepath.Join(path, "emptyDirs", volume.Name)
-				log.G(Ctx).Info("-- Creating EmptyDir in ", edPath)
-				err := os.MkdirAll(edPath, os.FileMode(0755)|os.ModeDir)
-				if err != nil {
-					return []string{}, nil, fmt.Errorf("could not create whole directory of %s root cause %w", edPath, err)
-				}
-				log.G(Ctx).Debug("-- Created EmptyDir in ", edPath)
-				/*
-					cmd := []string{"-p " + edPath}
-					shell := exec2.ExecTask{
-						Command: "mkdir",
-						Args:    cmd,
-						Shell:   true,
-					}
+				// Use absolute path for the emptyDir on the host
+				var hostEmptyDirPath string
+				hostEmptyDirPath = filepath.Join(path, "emptyDirs", volume.Name)
 
-					_, err := shell.Execute()
+				// Ensure absolute path
+				if !filepath.IsAbs(hostEmptyDirPath) {
+					absPath, err := filepath.Abs(hostEmptyDirPath)
 					if err != nil {
-						log.G(Ctx).Error(err)
-						return []string{}, nil, err
-					} else {
-						log.G(Ctx).Debug("-- Created EmptyDir in ", edPath)
+						return []string{}, nil, fmt.Errorf("could not get absolute path for %s root cause %w", hostEmptyDirPath, err)
 					}
-				*/
+					hostEmptyDirPath = absPath
+				}
+
+				log.G(Ctx).Info("-- Creating EmptyDir at: ", hostEmptyDirPath)
+				err := os.MkdirAll(hostEmptyDirPath, os.FileMode(0755)|os.ModeDir)
+				if err != nil {
+					return []string{}, nil, fmt.Errorf("could not create whole directory of %s root cause %w", hostEmptyDirPath, err)
+				}
+				log.G(Ctx).Debug("-- Created EmptyDir at: ", hostEmptyDirPath)
 
 				mode := ""
 				if volumeMount.ReadOnly {
@@ -1298,8 +1340,18 @@ func mountData(Ctx context.Context, config SlurmConfig, container *v1.Container,
 				} else {
 					mode = ":rw"
 				}
-				edPath += (":" + volumeMount.MountPath + mode + " ")
-				edPaths = append(edPaths, " --bind "+edPath+" ")
+
+				// Build the bind mount string: hostPath:containerPath:mode
+				bindMount := hostEmptyDirPath + ":" + volumeMount.MountPath + mode
+				log.G(Ctx).Info("-- EmptyDir bind mount for container ", container.Name, ": ", bindMount)
+
+				// Add bind mount with proper formatting for singularity/enroot
+				switch config.ContainerRuntime {
+				case "singularity":
+					edPaths = append(edPaths, " --bind "+bindMount)
+				case "enroot":
+					edPaths = append(edPaths, " --mount "+bindMount)
+				}
 			}
 			duration := time.Now().UnixMicro() - start
 			span.AddEvent("Prepared emptydir mounts", trace.WithAttributes(
@@ -1315,7 +1367,8 @@ func mountData(Ctx context.Context, config SlurmConfig, container *v1.Container,
 	return nil, nil, nil
 }
 
-// checkIfJidExists checks if a JID is in the main JIDs struct
+// checkIfJidExists verifies whether a pod UID has an associated SLURM job ID in the JIDs map.
+// Returns true if the mapping exists, false otherwise. Adds a trace event when the job ID is not found.
 func checkIfJidExists(ctx context.Context, JIDs *map[string]*JidStruct, uid string) bool {
 	span := trace.SpanFromContext(ctx)
 	_, ok := (*JIDs)[uid]
@@ -1328,7 +1381,10 @@ func checkIfJidExists(ctx context.Context, JIDs *map[string]*JidStruct, uid stri
 	}
 }
 
-// getExitCode returns the exit code read from the .status file of a specific container and returns it as an int32 number
+// getExitCode retrieves the exit code of a container from its status file (run-<container>.status or
+// init-<container>.status). If the file doesn't exist (e.g., job was cancelled before completion),
+// it uses the SLURM job exit code as a fallback and creates the status file for future reads.
+// Returns the exit code as an int32 and any error encountered.
 func getExitCode(ctx context.Context, path string, ctName string, exitCodeMatch string, sessionContextMessage string) (int32, error) {
 	statusFilePath := path + "/run-" + ctName + ".status"
 	exitCode, err := os.ReadFile(statusFilePath)

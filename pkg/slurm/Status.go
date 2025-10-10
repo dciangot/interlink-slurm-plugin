@@ -24,7 +24,11 @@ import (
 	trace "go.opentelemetry.io/otel/trace"
 )
 
-// StatusHandler performs a squeue --me and uses regular expressions to get the running Jobs' status
+// StatusHandler is the HTTP handler for pod status queries. It executes 'squeue --me' to retrieve
+// SLURM job states and translates them into Kubernetes pod/container statuses. The handler maps
+// SLURM states (R, PD, CD, F, etc.) to Kubernetes states (Running, Waiting, Terminated) and tracks
+// container readiness based on probe results. Status is cached for 10 seconds to reduce SLURM load.
+// If no pods are requested, it returns 'sinfo -s' output for cluster information.
 func (h *SidecarHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 	start := time.Now().UnixMicro()
 	tracer := otel.Tracer("interlink-API")
@@ -380,7 +384,9 @@ func (h *SidecarHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getSinfoSummary executes 'sinfo -s' command and returns the output
+// getSinfoSummary executes 'sinfo -s' to retrieve a summary of SLURM cluster partition information.
+// This provides visibility into node states, availability, and partition configuration.
+// Returns the command output as a string and any error encountered.
 func (h *SidecarHandler) getSinfoSummary() (string, error) {
 	cmd := []string{"-s"}
 	shell := exec.ExecTask{
