@@ -103,7 +103,7 @@ func (s *SlurmBackend) Status(ctx context.Context, pods []*v1.Pod) ([]commonIL.P
 func (s *SlurmBackend) Cancel(ctx context.Context, podUID string) error {
 	// Create a minimal pod structure with just the UID
 	pod := v1.Pod{}
-	pod.UID = v1.UID(podUID)
+	pod.UID = types.UID(podUID)
 
 	body, err := json.Marshal(pod)
 	if err != nil {
