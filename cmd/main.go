@@ -250,6 +250,14 @@ func main() {
 		}
 		batchSystem = podmanBackend
 
+	case config.BackendTypeHTCondor:
+		log.G(ctx).Info("Initializing HTCondor backend")
+		htcondorBackend, err := htcondor.NewHTCondorBackend(ctx, cfg.HTCondor)
+		if err != nil {
+			log.G(ctx).Fatal("Failed to initialize HTCondor backend: ", err)
+		}
+		batchSystem = htcondorBackend
+
 	default:
 		log.G(ctx).Fatal("Unknown backend type: ", cfg.BackendType)
 	}
