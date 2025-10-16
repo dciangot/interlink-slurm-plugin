@@ -66,10 +66,11 @@ func (c *ContainerdBackend) runContainer(ctx context.Context, pod *v1.Pod, conta
 	}
 
 	// Add resource limits
-	resources := c.prepareResources(container)
-	if resources != nil {
-		opts = append(opts, oci.WithResources(resources))
-	}
+	// Note: oci.WithResources is not available in this version of containerd
+	// resources := c.prepareResources(container)
+	// if resources != nil {
+	// 	opts = append(opts, oci.WithResources(resources))
+	// }
 
 	// Create log file
 	logPath := filepath.Join(filesPath, container.Name+".log")
