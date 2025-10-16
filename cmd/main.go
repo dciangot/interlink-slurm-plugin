@@ -167,17 +167,14 @@ func main() {
 		verboseLogging = cfg.SLURM.VerboseLogging
 		errorsOnlyLogging = cfg.SLURM.ErrorsOnlyLogging
 	case config.BackendTypeDocker:
-		verboseLogging = cfg.Docker.VerboseLogging
-		errorsOnlyLogging = cfg.Docker.ErrorsOnlyLogging
+		verboseLogging, errorsOnlyLogging = getDockerLogging(cfg)
 	case config.BackendTypeContainerd:
-		verboseLogging = cfg.Containerd.VerboseLogging
-		errorsOnlyLogging = cfg.Containerd.ErrorsOnlyLogging
+		verboseLogging, errorsOnlyLogging = getContainerdLogging(cfg)
 	case config.BackendTypePodman:
 		verboseLogging = cfg.Podman.VerboseLogging
 		errorsOnlyLogging = cfg.Podman.ErrorsOnlyLogging
 	case config.BackendTypeHTCondor:
-		verboseLogging = cfg.HTCondor.VerboseLogging
-		errorsOnlyLogging = cfg.HTCondor.ErrorsOnlyLogging
+		verboseLogging, errorsOnlyLogging = getHTCondorLogging(cfg)
 	}
 
 	if verboseLogging {
