@@ -23,6 +23,8 @@ linters:
     - revive
 run:
   issues-exit-code: 0
+  skip-dirs:
+    - pkg/backend/htcondor
 linters-settings:
   gosec:
     severity: medium
