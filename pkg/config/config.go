@@ -134,8 +134,36 @@ func LoadConfig() (*UnifiedConfig, error) {
 		if config.Podman.Namespace == "" {
 			config.Podman.Namespace = "default"
 		}
+	case BackendTypeHTCondor:
+		if config.HTCondor == nil {
+			return nil, fmt.Errorf("HTCondor backend selected but no HTCondor configuration provided")
+		}
+		// Set defaults for HTCondor config
+		if config.HTCondor.CondorSubmitPath == "" {
+			config.HTCondor.CondorSubmitPath = "/usr/bin/condor_submit"
+		}
+		if config.HTCondor.CondorQPath == "" {
+			config.HTCondor.CondorQPath = "/usr/bin/condor_q"
+		}
+		if config.HTCondor.CondorRmPath == "" {
+			config.HTCondor.CondorRmPath = "/usr/bin/condor_rm"
+		}
+		if config.HTCondor.CondorHistoryPath == "" {
+			config.HTCondor.CondorHistoryPath = "/usr/bin/condor_history"
+		}
+		if config.HTCondor.SingularityPath == "" {
+			config.HTCondor.SingularityPath = "/usr/bin/singularity"
+		}
+		if config.HTCondor.SpoolDirectory == "" {
+			config.HTCondor.SpoolDirectory = "/var/interlink/htcondor/spool"
+		}
+		if config.HTCondor.DataRootFolder == "" {
+			config.HTCondor.DataRootFolder = "/var/interlink/htcondor"
+		}
+		// Log streaming is always disabled for HTCondor (no shared filesystem)
+		config.HTCondor.EnableLogStreaming = false
 	default:
-		return nil, fmt.Errorf("unknown backend type: %s (must be 'slurm', 'docker', 'containerd', or 'podman')", config.BackendType)
+		return nil, fmt.Errorf("unknown backend type: %s (must be 'slurm', 'docker', 'containerd', 'podman', or 'htcondor')", config.BackendType)
 	}
 
 	return &config, nil
