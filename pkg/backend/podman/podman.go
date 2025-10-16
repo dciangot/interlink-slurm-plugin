@@ -140,7 +140,7 @@ func (p *PodmanBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 
 	// Process init containers
 	for _, container := range pod.Spec.InitContainers {
-		containerID, err := p.runContainer(ctx, pod, &container, filesPath, true, jobInfo.PodmanPodID)
+		containerID, err := p.runContainer(ctx, &pod, &container, filesPath, true, jobInfo.PodmanPodID)
 		if err != nil {
 			p.cleanup(ctx, jobInfo)
 			os.RemoveAll(filesPath)
