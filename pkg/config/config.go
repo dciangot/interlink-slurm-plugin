@@ -40,6 +40,9 @@ type UnifiedConfig struct {
 
 	// Podman-specific configuration (used when BackendType is "podman")
 	Podman *podman.PodmanConfig `yaml:"Podman,omitempty"`
+
+	// HTCondor-specific configuration (used when BackendType is "htcondor")
+	HTCondor *htcondor.HTCondorConfig `yaml:"HTCondor,omitempty"`
 }
 
 // LoadConfig loads configuration from the specified path or default location
