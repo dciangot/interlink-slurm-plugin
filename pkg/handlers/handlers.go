@@ -75,7 +75,9 @@ func (h *GenericHandler) SubmitHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(statusCode)
 	commonIL.SetDurationSpan(start, span, commonIL.WithHTTPReturnCode(statusCode))
-	w.Write(responseBytes)
+	if _, err := w.Write(responseBytes); err != nil {
+		log.G(spanCtx).Error("Failed to write response: ", err)
+	}
 }
 
 // StatusHandler handles pod status requests
