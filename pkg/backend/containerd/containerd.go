@@ -109,7 +109,7 @@ func (c *ContainerdBackend) Submit(ctx context.Context, podData *commonIL.Retrie
 
 	// Process regular containers
 	for _, container := range pod.Spec.Containers {
-		containerID, err := c.runContainer(ctx, pod, &container, filesPath, false)
+		containerID, err := c.runContainer(ctx, &pod, &container, filesPath, false)
 		if err != nil {
 			c.cleanup(ctx, jobInfo)
 			os.RemoveAll(filesPath)
