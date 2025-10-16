@@ -1,7 +1,6 @@
 package podman
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
