@@ -221,20 +221,16 @@ func main() {
 		batchSystem = slurmbackend.NewSlurmBackend(ctx, cfg.SLURM, &JobIDs)
 
 	case config.BackendTypeDocker:
-		log.G(ctx).Info("Initializing Docker backend")
-		dockerBackend, err := docker.NewDockerBackend(ctx, cfg.Docker)
+		batchSystem, err = initDockerBackend(ctx, cfg)
 		if err != nil {
 			log.G(ctx).Fatal("Failed to initialize Docker backend: ", err)
 		}
-		batchSystem = dockerBackend
 
 	case config.BackendTypeContainerd:
-		log.G(ctx).Info("Initializing Containerd backend")
-		containerdBackend, err := containerd.NewContainerdBackend(ctx, cfg.Containerd)
+		batchSystem, err = initContainerdBackend(ctx, cfg)
 		if err != nil {
 			log.G(ctx).Fatal("Failed to initialize Containerd backend: ", err)
 		}
-		batchSystem = containerdBackend
 
 	case config.BackendTypePodman:
 		log.G(ctx).Info("Initializing Podman backend")
@@ -245,12 +241,10 @@ func main() {
 		batchSystem = podmanBackend
 
 	case config.BackendTypeHTCondor:
-		log.G(ctx).Info("Initializing HTCondor backend")
-		htcondorBackend, err := htcondor.NewHTCondorBackend(ctx, cfg.HTCondor)
+		batchSystem, err = initHTCondorBackend(ctx, cfg)
 		if err != nil {
 			log.G(ctx).Fatal("Failed to initialize HTCondor backend: ", err)
 		}
-		batchSystem = htcondorBackend
 
 	default:
 		log.G(ctx).Fatal("Unknown backend type: ", cfg.BackendType)
