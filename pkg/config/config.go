@@ -93,13 +93,6 @@ func LoadConfig() (*UnifiedConfig, error) {
 		if config.Docker == nil {
 			return nil, fmt.Errorf("Docker backend selected but no Docker configuration provided")
 		}
-		// Set defaults for Docker config
-		if config.Docker.DataRootFolder == "" {
-			config.Docker.DataRootFolder = "/var/interlink"
-		}
-		if config.Docker.Endpoint == "" {
-			config.Docker.Endpoint = "unix:///var/run/docker.sock"
-		}
 	case BackendTypeContainerd:
 		if config.Containerd == nil {
 			return nil, fmt.Errorf("Containerd backend selected but no Containerd configuration provided")
