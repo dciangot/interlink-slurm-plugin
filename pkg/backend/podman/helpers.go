@@ -273,7 +273,13 @@ func (p *PodmanBackend) getContainerStatus(ctx context.Context, containerID, con
 	} else {
 		// Container has terminated
 		startedAt, err := time.Parse(time.RFC3339Nano, inspect.State.StartedAt)
+		if err != nil {
+			startedAt = time.Time{}
+		}
 		finishedAt, err := time.Parse(time.RFC3339Nano, inspect.State.FinishedAt)
+		if err != nil {
+			finishedAt = time.Time{}
+		}
 
 		if jobInfo.EndTime.IsZero() && !finishedAt.IsZero() {
 			jobInfo.EndTime = finishedAt
