@@ -131,8 +131,8 @@ func (s *SlurmBackend) GetLogs(ctx context.Context, podUID, containerName string
 		PodUID:        podUID,
 		ContainerName: containerName,
 		Opts: commonIL.ContainerLogOpts{
-			Follow:    follow,
-			TailLines: func() *int64 { i := int64(tailLines); return &i }(),
+			Follow: follow,
+			Tail:   tailLines,
 		},
 	}
 
