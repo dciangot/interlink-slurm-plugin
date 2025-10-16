@@ -127,10 +127,10 @@ func (s *SlurmBackend) Cancel(ctx context.Context, podUID string) error {
 
 // GetLogs implements the BatchSystem interface for SLURM
 func (s *SlurmBackend) GetLogs(ctx context.Context, podUID, containerName string, follow bool, tailLines int) (io.Reader, error) {
-	logsRequest := commonIL.LogRequest{
+	logsRequest := commonIL.LogStruct{
 		PodUID:        podUID,
 		ContainerName: containerName,
-		Opts: v1.PodLogOptions{
+		Opts: commonIL.ContainerLogOpts{
 			Follow:    follow,
 			TailLines: func() *int64 { i := int64(tailLines); return &i }(),
 		},
