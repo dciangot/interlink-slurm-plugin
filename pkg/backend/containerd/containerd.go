@@ -256,7 +256,7 @@ func (c *ContainerdBackend) GetLogs(ctx context.Context, podUID, containerName s
 		return nil, fmt.Errorf("job not found for pod UID: %s", podUID)
 	}
 
-	containerID, found := jobInfo.ContainerIDs[containerName]
+	_, found := jobInfo.ContainerIDs[containerName]
 	if !found {
 		return nil, fmt.Errorf("container %s not found in job", containerName)
 	}
