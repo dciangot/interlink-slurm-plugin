@@ -21,6 +21,7 @@ const (
 	BackendTypeDocker      BackendType = "docker"
 	BackendTypeContainerd  BackendType = "containerd"
 	BackendTypePodman      BackendType = "podman"
+	BackendTypeHTCondor    BackendType = "htcondor"
 )
 
 // UnifiedConfig holds configuration for any backend type
