@@ -1,10 +1,10 @@
 # InterLink Unified Backend Configuration
-# This file demonstrates how to configure either SLURM or Docker backends
+# This file demonstrates how to configure any supported backend
 
 # ============================================================================
 # BACKEND SELECTION
 # ============================================================================
-# Choose which backend to use: "slurm" or "docker"
+# Choose which backend to use: "slurm", "docker", "containerd", or "podman"
 BackendType: docker
 
 # ============================================================================
