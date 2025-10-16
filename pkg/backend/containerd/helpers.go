@@ -159,7 +159,7 @@ func (c *ContainerdBackend) getContainerStatus(ctx context.Context, containerID,
 		containerStatus.Ready = false
 
 	case containerd.Stopped:
-		exitStatus, _, err := task.Wait(ctx)
+		exitStatus, err := task.Wait(ctx)
 		var exitCode int32
 		if err == nil {
 			select {
