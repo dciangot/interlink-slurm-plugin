@@ -30,27 +30,27 @@ func (h *HTCondorBackend) executeCommand(ctx context.Context, cmdStr string) (st
 
 // validateConfig validates the HTCondor configuration
 func (h *HTCondorBackend) validateConfig() error {
-	if h.config.CondorSubmitPath == "" {
+	if h.Config.CondorSubmitPath == "" {
 		return fmt.Errorf("CondorSubmitPath is required")
 	}
 	
-	if h.config.CondorQPath == "" {
+	if h.Config.CondorQPath == "" {
 		return fmt.Errorf("CondorQPath is required")
 	}
 	
-	if h.config.CondorRmPath == "" {
+	if h.Config.CondorRmPath == "" {
 		return fmt.Errorf("CondorRmPath is required")
 	}
 	
-	if h.config.CondorHistoryPath == "" {
+	if h.Config.CondorHistoryPath == "" {
 		return fmt.Errorf("CondorHistoryPath is required")
 	}
 	
-	if h.config.SingularityPath == "" {
+	if h.Config.SingularityPath == "" {
 		return fmt.Errorf("SingularityPath is required")
 	}
 	
-	if h.config.SpoolDirectory == "" {
+	if h.Config.SpoolDirectory == "" {
 		return fmt.Errorf("SpoolDirectory is required")
 	}
 	
