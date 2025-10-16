@@ -117,7 +117,11 @@ func (h *GenericHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(info))
+		if _, err := w.Write([]byte(info)); err != nil {
+
+			log.G(spanCtx).Error("Failed to write response: ", err)
+
+		}
 		return
 	}
 
@@ -218,7 +222,11 @@ func (h *GenericHandler) GetLogsHandler(w http.ResponseWriter, r *http.Request) 
 	}()
 
 	w.WriteHeader(statusCode)
-	io.Copy(w, reader)
+	if _, err := io.Copy(w, reader); err != nil {
+
+		log.G(spanCtx).Error("Failed to copy logs: ", err)
+
+	}
 }
 
 // SystemInfoHandler handles system info requests
@@ -241,7 +249,11 @@ func (h *GenericHandler) SystemInfoHandler(w http.ResponseWriter, _ *http.Reques
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(info))
+	if _, err := w.Write([]byte(info)); err != nil {
+
+		log.G(spanCtx).Error("Failed to write response: ", err)
+
+	}
 }
 
 // handleError logs an error and writes an HTTP error response

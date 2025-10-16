@@ -125,7 +125,10 @@ func (s *SlurmBackend) Cancel(_ context.Context, podUID string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
 		return fmt.Errorf("cancel failed with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
@@ -175,7 +178,10 @@ func (s *SlurmBackend) SystemInfo(ctx context.Context) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
 		return "", fmt.Errorf("system info request failed with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 

@@ -273,7 +273,7 @@ func (h *SidecarHandler) SubmitHandler(w http.ResponseWriter, r *http.Request) {
 	commonIL.SetDurationSpan(start, span, commonIL.WithHTTPReturnCode(statusCode))
 
 	if statusCode != http.StatusOK {
-		w.Write([]byte("Some errors occurred while creating containers. Check Slurm Sidecar's logs"))
+		_, _ = w.Write([]byte("Some errors occurred while creating containers. Check Slurm Sidecar's logs"))
 	} else if cond {
 		w.Write(returnedJIDBytes)
 	}

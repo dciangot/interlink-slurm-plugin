@@ -121,7 +121,11 @@ func (p *PodmanBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 	if podData.JobScript != "" {
 		containerID, err := p.executeJobScript(ctx, &pod, podData.JobScript, filesPath, jobInfo.PodmanPodID)
 		if err != nil {
-			p.cleanup(ctx, jobInfo)
+			if err := p.cleanup(ctx, jobInfo); err != nil {
+
+				log.G(ctx).Warn("Failed to cleanup job: ", err)
+
+			}
 			os.RemoveAll(filesPath)
 			return "", err
 		}
@@ -142,14 +146,22 @@ func (p *PodmanBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 	for _, container := range pod.Spec.InitContainers {
 		containerID, err := p.runContainer(ctx, &pod, &container, filesPath, true, jobInfo.PodmanPodID)
 		if err != nil {
-			p.cleanup(ctx, jobInfo)
+			if err := p.cleanup(ctx, jobInfo); err != nil {
+
+				log.G(ctx).Warn("Failed to cleanup job: ", err)
+
+			}
 			os.RemoveAll(filesPath)
 			return "", fmt.Errorf("failed to run init container %s: %w", container.Name, err)
 		}
 		jobInfo.ContainerIDs[container.Name] = containerID
 
 		if err := p.waitForContainer(ctx, containerID); err != nil {
-			p.cleanup(ctx, jobInfo)
+			if err := p.cleanup(ctx, jobInfo); err != nil {
+
+				log.G(ctx).Warn("Failed to cleanup job: ", err)
+
+			}
 			os.RemoveAll(filesPath)
 			return "", fmt.Errorf("init container %s failed: %w", container.Name, err)
 		}
@@ -159,7 +171,11 @@ func (p *PodmanBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 	for _, container := range pod.Spec.Containers {
 		containerID, err := p.runContainer(ctx, &pod, &container, filesPath, false, jobInfo.PodmanPodID)
 		if err != nil {
-			p.cleanup(ctx, jobInfo)
+			if err := p.cleanup(ctx, jobInfo); err != nil {
+
+				log.G(ctx).Warn("Failed to cleanup job: ", err)
+
+			}
 			os.RemoveAll(filesPath)
 			return "", fmt.Errorf("failed to run container %s: %w", container.Name, err)
 		}
@@ -244,7 +260,9 @@ func (p *PodmanBackend) Cancel(ctx context.Context, podUID string) error {
 		return fmt.Errorf("job not found for pod UID: %s", podUID)
 	}
 
-	return p.cleanup(ctx, jobInfo)
+	return if err := p.cleanup(ctx, jobInfo); err != nil {
+ 	log.G(ctx).Warn("Failed to cleanup job: ", err)
+ }
 }
 
 // GetLogs implements the BatchSystem interface for Podman

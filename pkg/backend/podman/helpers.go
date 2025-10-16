@@ -199,7 +199,10 @@ func (p *PodmanBackend) runContainer(ctx context.Context, pod *v1.Pod, container
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 201 {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
 		return "", fmt.Errorf("failed to create container: status %d, body: %s", resp.StatusCode, string(bodyBytes))
 	}
 
@@ -250,7 +253,7 @@ func (p *PodmanBackend) getContainerStatus(ctx context.Context, containerID, con
 
 	// Map Podman state to Kubernetes state
 	if inspect.State.Running {
-		startedAt, _ := time.Parse(time.RFC3339Nano, inspect.State.StartedAt)
+		startedAt, err := time.Parse(time.RFC3339Nano, inspect.State.StartedAt)
 		status.State = v1.ContainerState{
 			Running: &v1.ContainerStateRunning{
 				StartedAt: metav1.Time{Time: startedAt},
@@ -266,12 +269,16 @@ func (p *PodmanBackend) getContainerStatus(ctx context.Context, containerID, con
 		status.Ready = false
 	} else {
 		// Container has terminated
-		startedAt, _ := time.Parse(time.RFC3339Nano, inspect.State.StartedAt)
-		finishedAt, _ := time.Parse(time.RFC3339Nano, inspect.State.FinishedAt)
+		startedAt, err := time.Parse(time.RFC3339Nano, inspect.State.StartedAt)
+		finishedAt, err := time.Parse(time.RFC3339Nano, inspect.State.FinishedAt)
 
 		if jobInfo.EndTime.IsZero() && !finishedAt.IsZero() {
 			jobInfo.EndTime = finishedAt
-			p.saveJobMetadata(jobInfo)
+			if err := p.saveJobMetadata(jobInfo); err != nil {
+
+				log.G(ctx).Warn("Failed to save job metadata: ", err)
+
+			}
 		}
 
 		status.State = v1.ContainerState{
@@ -414,7 +421,11 @@ func (p *PodmanBackend) prepareMounts(pod *v1.Pod, container *v1.Container, file
 			})
 		} else if volume.EmptyDir != nil {
 			emptyDirPath := filepath.Join(filesPath, "emptydir", volume.Name)
-			os.MkdirAll(emptyDirPath, 0755)
+			if err := os.MkdirAll(emptyDirPath, 0755); err != nil {
+
+				log.G(ctx).Warn("Failed to create emptyDir: ", err)
+
+			}
 			mounts = append(mounts, map[string]interface{}{
 				"type":        "bind",
 				"source":      emptyDirPath,

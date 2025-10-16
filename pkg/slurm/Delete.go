@@ -70,7 +70,7 @@ func (h *SidecarHandler) StopHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(statusCode)
 	if statusCode != http.StatusOK {
-		w.Write([]byte("Some errors occurred deleting containers. Check Slurm Sidecar's logs"))
+		_, _ = w.Write([]byte("Some errors occurred deleting containers. Check Slurm Sidecar's logs"))
 	} else {
 		w.Write([]byte("All containers for submitted Pods have been deleted"))
 	}
