@@ -277,6 +277,12 @@ func main() {
 	case config.BackendTypeDocker:
 		// Docker backend uses port by default
 		sidecarPort = "4000"
+	case config.BackendTypeContainerd:
+		// Containerd backend uses port by default
+		sidecarPort = "4000"
+	case config.BackendTypePodman:
+		// Podman backend uses port by default
+		sidecarPort = "4000"
 	}
 
 	// Start HTTP server
