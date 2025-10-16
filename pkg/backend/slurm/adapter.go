@@ -85,7 +85,10 @@ func (s *SlurmBackend) Status(ctx context.Context, pods []*v1.Pod) ([]commonIL.P
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("status request failed with status %d and failed to read body: %w", resp.StatusCode, err)
+		}
 		return nil, fmt.Errorf("status request failed with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
