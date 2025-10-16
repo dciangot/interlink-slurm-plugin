@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	commonIL "github.com/interlink-hq/interlink/pkg/interlink"
 	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/backend"
@@ -25,7 +26,7 @@ type SlurmBackend struct {
 func NewSlurmBackend(ctx context.Context, config *slurm.SlurmConfig, jids *map[string]*slurm.JidStruct) *SlurmBackend {
 	return &SlurmBackend{
 		handler: &slurm.SidecarHandler{
-			Config: config,
+			Config: *config,
 			JIDs:   jids,
 			Ctx:    ctx,
 		},
@@ -102,7 +103,7 @@ func (s *SlurmBackend) Status(ctx context.Context, pods []*v1.Pod) ([]commonIL.P
 func (s *SlurmBackend) Cancel(ctx context.Context, podUID string) error {
 	// Create a minimal pod structure with just the UID
 	pod := v1.Pod{}
-	pod.UID = v1.UID(podUID)
+	pod.UID = types.UID(podUID)
 
 	body, err := json.Marshal(pod)
 	if err != nil {
@@ -127,12 +128,12 @@ func (s *SlurmBackend) Cancel(ctx context.Context, podUID string) error {
 
 // GetLogs implements the BatchSystem interface for SLURM
 func (s *SlurmBackend) GetLogs(ctx context.Context, podUID, containerName string, follow bool, tailLines int) (io.Reader, error) {
-	logsRequest := commonIL.LogRequest{
+	logsRequest := commonIL.LogStruct{
 		PodUID:        podUID,
 		ContainerName: containerName,
-		Opts: v1.PodLogOptions{
-			Follow:    follow,
-			TailLines: func() *int64 { i := int64(tailLines); return &i }(),
+		Opts: commonIL.ContainerLogOpts{
+			Follow: follow,
+			Tail:   tailLines,
 		},
 	}
 

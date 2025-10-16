@@ -194,17 +194,14 @@ func (h *GenericHandler) GetLogsHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var logRequest commonIL.LogRequest
+	var logRequest commonIL.LogStruct
 	if err := json.Unmarshal(bodyBytes, &logRequest); err != nil {
 		statusCode = http.StatusInternalServerError
 		h.handleError(spanCtx, w, statusCode, err)
 		return
 	}
 
-	tailLines := 0
-	if logRequest.Opts.TailLines != nil {
-		tailLines = int(*logRequest.Opts.TailLines)
-	}
+	tailLines := logRequest.Opts.Tail
 
 	reader, err := h.Backend.GetLogs(spanCtx, logRequest.PodUID, logRequest.ContainerName, logRequest.Opts.Follow, tailLines)
 	if err != nil {

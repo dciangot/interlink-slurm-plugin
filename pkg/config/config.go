@@ -6,9 +6,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/backend/containerd"
-	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/backend/docker"
-	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/backend/htcondor"
 	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/backend/podman"
 	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/slurm"
 )
@@ -33,16 +30,16 @@ type UnifiedConfig struct {
 	SLURM *slurm.SlurmConfig `yaml:"SLURM,omitempty"`
 
 	// Docker-specific configuration (used when BackendType is "docker")
-	Docker *docker.DockerConfig `yaml:"Docker,omitempty"`
+	Docker *DockerConfig `yaml:"Docker,omitempty"`
 
 	// Containerd-specific configuration (used when BackendType is "containerd")
-	Containerd *containerd.ContainerdConfig `yaml:"Containerd,omitempty"`
+	Containerd *ContainerdConfig `yaml:"Containerd,omitempty"`
 
 	// Podman-specific configuration (used when BackendType is "podman")
 	Podman *podman.PodmanConfig `yaml:"Podman,omitempty"`
 
 	// HTCondor-specific configuration (used when BackendType is "htcondor")
-	HTCondor *htcondor.HTCondorConfig `yaml:"HTCondor,omitempty"`
+	HTCondor *HTCondorConfig `yaml:"HTCondor,omitempty"`
 }
 
 // LoadConfig loads configuration from the specified path or default location

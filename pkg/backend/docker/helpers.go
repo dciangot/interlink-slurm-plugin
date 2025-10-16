@@ -1,3 +1,6 @@
+//go:build docker
+// +build docker
+
 package docker
 
 import (
@@ -11,9 +14,9 @@ import (
 	"time"
 
 	"github.com/containerd/containerd/log"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
-	dockerclient "github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/mount"
+	dockerclient "github.com/moby/moby/client"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

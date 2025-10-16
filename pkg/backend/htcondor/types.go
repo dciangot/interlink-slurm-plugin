@@ -1,3 +1,6 @@
+//go:build htcondor
+// +build htcondor
+
 package htcondor
 
 import (
@@ -93,28 +96,6 @@ const (
 	JobStateTransferOut HTCondorJobState = 6 // Transferring output
 	JobStateSuspended   HTCondorJobState = 7 // Suspended
 )
-
-// String returns the string representation of job state
-func (s HTCondorJobState) String() string {
-	switch s {
-	case JobStateIdle:
-		return "Idle"
-	case JobStateRunning:
-		return "Running"
-	case JobStateRemoved:
-		return "Removed"
-	case JobStateCompleted:
-		return "Completed"
-	case JobStateHeld:
-		return "Held"
-	case JobStateTransferOut:
-		return "TransferringOutput"
-	case JobStateSuspended:
-		return "Suspended"
-	default:
-		return "Unknown"
-	}
-}
 
 // HTCondorJob represents a job's information from condor_q or condor_history
 type HTCondorJob struct {

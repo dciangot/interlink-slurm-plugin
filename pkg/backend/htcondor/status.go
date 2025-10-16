@@ -1,3 +1,6 @@
+//go:build htcondor
+// +build htcondor
+
 package htcondor
 
 import (
@@ -13,7 +16,7 @@ import (
 )
 
 // queryJobStatus queries HTCondor for the status of a specific job
-func (h *HTCondorBackend) queryJobStatus(ctx context.Context, jobID string) (*HTCondorJobInfo, error) {
+func (h *HTCondorBackend) queryJobStatus(ctx context.Context, jobID string) (*HTCondorJob, error) {
 	// First try condor_q for active jobs
 	cmd := fmt.Sprintf("%s -json %s", h.config.CondorQPath, jobID)
 	
@@ -49,11 +52,11 @@ func (h *HTCondorBackend) queryJobStatus(ctx context.Context, jobID string) (*HT
 }
 
 // parseCondorQJSON parses JSON output from condor_q
-func (h *HTCondorBackend) parseCondorQJSON(output string) (*HTCondorJobInfo, error) {
+func (h *HTCondorBackend) parseCondorQJSON(output string) (*HTCondorJob, error) {
 	// Simple JSON parsing - looking for JobStatus field
 	// Full implementation would use encoding/json
 	
-	jobInfo := &HTCondorJobInfo{}
+	jobInfo := &HTCondorJob{}
 	
 	// Extract ClusterId
 	if clusterID := extractJSONField(output, "ClusterId"); clusterID != "" {
@@ -94,7 +97,7 @@ func (h *HTCondorBackend) parseCondorQJSON(output string) (*HTCondorJobInfo, err
 }
 
 // parseCondorHistoryJSON parses JSON output from condor_history
-func (h *HTCondorBackend) parseCondorHistoryJSON(output string) (*HTCondorJobInfo, error) {
+func (h *HTCondorBackend) parseCondorHistoryJSON(output string) (*HTCondorJob, error) {
 	// Same parsing as condor_q, but marks job as historical
 	jobInfo, err := h.parseCondorQJSON(output)
 	if err != nil {
@@ -124,7 +127,8 @@ func extractJSONField(jsonStr, fieldName string) string {
 	remaining := jsonStr[start:]
 	
 	// Skip whitespace
-	remaining = strings.TrimLeft(remaining, " \t\n")
+	remaining = strings.TrimLeft(remaining, " 	
+")
 	
 	// Extract value (up to comma or closing brace)
 	var value string
@@ -137,7 +141,8 @@ func extractJSONField(jsonStr, fieldName string) string {
 		value = remaining[1 : endIdx+1]
 	} else {
 		// Numeric value
-		endIdx := strings.IndexAny(remaining, ",\n}")
+		endIdx := strings.IndexAny(remaining, ",
+}")
 		if endIdx == -1 {
 			endIdx = len(remaining)
 		}
@@ -168,7 +173,7 @@ func (h *HTCondorBackend) translateHTCondorStateToPodPhase(state HTCondorJobStat
 }
 
 // translateHTCondorStateToContainerState converts HTCondor job state to container state
-func (h *HTCondorBackend) translateHTCondorStateToContainerState(jobInfo *HTCondorJobInfo) v1.ContainerState {
+func (h *HTCondorBackend) translateHTCondorStateToContainerState(jobInfo *HTCondorJob) v1.ContainerState {
 	switch jobInfo.Status {
 	case JobStateIdle, JobStateHeld, JobStateSuspended:
 		return v1.ContainerState{

@@ -1,3 +1,6 @@
+//go:build htcondor
+// +build htcondor
+
 package htcondor
 
 import (

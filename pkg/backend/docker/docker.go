@@ -1,3 +1,6 @@
+//go:build docker
+// +build docker
+
 package docker
 
 import (
@@ -11,9 +14,9 @@ import (
 	"time"
 
 	"github.com/containerd/containerd/log"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/mount"
+	"github.com/moby/moby/client"
 	v1 "k8s.io/api/core/v1"
 
 	commonIL "github.com/interlink-hq/interlink/pkg/interlink"
@@ -69,7 +72,7 @@ func (d *DockerBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 
 	// If a custom job script is provided, execute it directly
 	if podData.JobScript != "" {
-		containerID, err := d.executeJobScript(ctx, pod, podData.JobScript, filesPath)
+		containerID, err := d.executeJobScript(ctx, &pod, podData.JobScript, filesPath)
 		if err != nil {
 			os.RemoveAll(filesPath)
 			return "", err
@@ -88,7 +91,7 @@ func (d *DockerBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 
 	// Process init containers first
 	for _, container := range pod.Spec.InitContainers {
-		containerID, err := d.runContainer(ctx, pod, &container, filesPath, true)
+		containerID, err := d.runContainer(ctx, &pod, &container, filesPath, true)
 		if err != nil {
 			d.cleanup(ctx, jobInfo)
 			os.RemoveAll(filesPath)
@@ -106,7 +109,7 @@ func (d *DockerBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 
 	// Process regular containers
 	for _, container := range pod.Spec.Containers {
-		containerID, err := d.runContainer(ctx, pod, &container, filesPath, false)
+		containerID, err := d.runContainer(ctx, &pod, &container, filesPath, false)
 		if err != nil {
 			d.cleanup(ctx, jobInfo)
 			os.RemoveAll(filesPath)

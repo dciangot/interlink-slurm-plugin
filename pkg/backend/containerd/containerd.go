@@ -1,3 +1,6 @@
+//go:build containerd
+// +build containerd
+
 package containerd
 
 import (
@@ -12,7 +15,6 @@ import (
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
-	"github.com/containerd/containerd/containers"
 	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
@@ -73,7 +75,7 @@ func (c *ContainerdBackend) Submit(ctx context.Context, podData *commonIL.Retrie
 
 	// If a custom job script is provided, execute it directly
 	if podData.JobScript != "" {
-		containerID, err := c.executeJobScript(ctx, pod, podData.JobScript, filesPath)
+		containerID, err := c.executeJobScript(ctx, &pod, podData.JobScript, filesPath)
 		if err != nil {
 			os.RemoveAll(filesPath)
 			return "", err
@@ -91,7 +93,7 @@ func (c *ContainerdBackend) Submit(ctx context.Context, podData *commonIL.Retrie
 
 	// Process init containers first
 	for _, container := range pod.Spec.InitContainers {
-		containerID, err := c.runContainer(ctx, pod, &container, filesPath, true)
+		containerID, err := c.runContainer(ctx, &pod, &container, filesPath, true)
 		if err != nil {
 			c.cleanup(ctx, jobInfo)
 			os.RemoveAll(filesPath)
@@ -109,7 +111,7 @@ func (c *ContainerdBackend) Submit(ctx context.Context, podData *commonIL.Retrie
 
 	// Process regular containers
 	for _, container := range pod.Spec.Containers {
-		containerID, err := c.runContainer(ctx, pod, &container, filesPath, false)
+		containerID, err := c.runContainer(ctx, &pod, &container, filesPath, false)
 		if err != nil {
 			c.cleanup(ctx, jobInfo)
 			os.RemoveAll(filesPath)
@@ -141,9 +143,14 @@ func (c *ContainerdBackend) executeJobScript(ctx context.Context, pod *v1.Pod, s
 		return "", fmt.Errorf("failed to write job script: %w", err)
 	}
 
-	image := c.prepareImage("bash:latest")
-	if err := c.pullImageIfNeeded(ctx, image); err != nil {
+	imageName := c.prepareImage("bash:latest")
+	if err := c.pullImageIfNeeded(ctx, imageName); err != nil {
 		log.G(ctx).Warning("Failed to pull image: ", err)
+	}
+
+	img, err := c.Client.GetImage(ctx, imageName)
+	if err != nil {
+		return "", fmt.Errorf("failed to get image: %w", err)
 	}
 
 	containerID := fmt.Sprintf("interlink-%s-jobscript", string(pod.UID))
@@ -152,10 +159,10 @@ func (c *ContainerdBackend) executeJobScript(ctx context.Context, pod *v1.Pod, s
 	container, err := c.Client.NewContainer(
 		ctx,
 		containerID,
-		containerd.WithImage(image),
-		containerd.WithNewSnapshot(containerID+"-snapshot", image),
+		containerd.WithImage(img),
+		containerd.WithNewSnapshot(containerID+"-snapshot", img),
 		containerd.WithNewSpec(
-			oci.WithImageConfig(image),
+			oci.WithImageConfig(img),
 			oci.WithProcessArgs("bash", "/job/jobScript.sh"),
 			oci.WithEnv([]string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}),
 		),
@@ -256,7 +263,7 @@ func (c *ContainerdBackend) GetLogs(ctx context.Context, podUID, containerName s
 		return nil, fmt.Errorf("job not found for pod UID: %s", podUID)
 	}
 
-	containerID, found := jobInfo.ContainerIDs[containerName]
+	_, found := jobInfo.ContainerIDs[containerName]
 	if !found {
 		return nil, fmt.Errorf("container %s not found in job", containerName)
 	}
