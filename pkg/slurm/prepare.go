@@ -296,7 +296,7 @@ func getRetrievedSecret(retrievedContainer *commonIL.RetrievedContainer, secretN
 			return &retrievedSecret, nil
 		}
 	}
-	return nil, fmt.Errorf("could not find secret %s in container %s in pod %s", secretName, containerName, podName)
+	return nil, fmt.Errorf("could not find secret %s in pod %s", secretName, podName)
 }
 
 func getPodVolume(pod *v1.Pod, volumeName string) (*v1.Volume, error) {
