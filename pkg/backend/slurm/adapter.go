@@ -25,7 +25,7 @@ type SlurmBackend struct {
 func NewSlurmBackend(ctx context.Context, config *slurm.SlurmConfig, jids *map[string]*slurm.JidStruct) *SlurmBackend {
 	return &SlurmBackend{
 		handler: &slurm.SidecarHandler{
-			Config: config,
+			Config: *config,
 			JIDs:   jids,
 			Ctx:    ctx,
 		},
