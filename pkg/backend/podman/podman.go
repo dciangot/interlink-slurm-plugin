@@ -108,7 +108,7 @@ func (p *PodmanBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 
 	// If using Podman pods, create a pod first
 	if p.Config.UsePods {
-		podID, err := p.createPodmanPod(ctx, pod)
+		podID, err := p.createPodmanPod(ctx, &pod)
 		if err != nil {
 			os.RemoveAll(filesPath)
 			return "", fmt.Errorf("failed to create Podman pod: %w", err)
@@ -119,7 +119,7 @@ func (p *PodmanBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 
 	// Handle custom job script
 	if podData.JobScript != "" {
-		containerID, err := p.executeJobScript(ctx, pod, podData.JobScript, filesPath, jobInfo.PodmanPodID)
+		containerID, err := p.executeJobScript(ctx, &pod, podData.JobScript, filesPath, jobInfo.PodmanPodID)
 		if err != nil {
 			p.cleanup(ctx, jobInfo)
 			os.RemoveAll(filesPath)
