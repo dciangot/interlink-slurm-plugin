@@ -69,7 +69,7 @@ func (d *DockerBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 
 	// If a custom job script is provided, execute it directly
 	if podData.JobScript != "" {
-		containerID, err := d.executeJobScript(ctx, pod, podData.JobScript, filesPath)
+		containerID, err := d.executeJobScript(ctx, &pod, podData.JobScript, filesPath)
 		if err != nil {
 			os.RemoveAll(filesPath)
 			return "", err
