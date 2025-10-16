@@ -14,13 +14,15 @@ import (
 type BackendType string
 
 const (
-	BackendTypeSLURM  BackendType = "slurm"
-	BackendTypeDocker BackendType = "docker"
+	BackendTypeSLURM       BackendType = "slurm"
+	BackendTypeDocker      BackendType = "docker"
+	BackendTypeContainerd  BackendType = "containerd"
+	BackendTypePodman      BackendType = "podman"
 )
 
 // UnifiedConfig holds configuration for any backend type
 type UnifiedConfig struct {
-	// BackendType specifies which batch system to use ("slurm" or "docker")
+	// BackendType specifies which batch system to use ("slurm", "docker", "containerd", or "podman")
 	BackendType BackendType `yaml:"BackendType"`
 
 	// SLURM-specific configuration (used when BackendType is "slurm")
@@ -28,6 +30,12 @@ type UnifiedConfig struct {
 
 	// Docker-specific configuration (used when BackendType is "docker")
 	Docker *docker.DockerConfig `yaml:"Docker,omitempty"`
+
+	// Containerd-specific configuration (used when BackendType is "containerd")
+	Containerd *containerd.ContainerdConfig `yaml:"Containerd,omitempty"`
+
+	// Podman-specific configuration (used when BackendType is "podman")
+	Podman *podman.PodmanConfig `yaml:"Podman,omitempty"`
 }
 
 // LoadConfig loads configuration from the specified path or default location
