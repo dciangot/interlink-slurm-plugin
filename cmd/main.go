@@ -295,6 +295,9 @@ func main() {
 	case config.BackendTypePodman:
 		// Podman backend uses port by default
 		sidecarPort = "4000"
+	case config.BackendTypeHTCondor:
+		// HTCondor backend uses port by default
+		sidecarPort = "4000"
 	}
 
 	// Start HTTP server
