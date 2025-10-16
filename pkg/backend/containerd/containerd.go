@@ -73,7 +73,7 @@ func (c *ContainerdBackend) Submit(ctx context.Context, podData *commonIL.Retrie
 
 	// If a custom job script is provided, execute it directly
 	if podData.JobScript != "" {
-		containerID, err := c.executeJobScript(ctx, pod, podData.JobScript, filesPath)
+		containerID, err := c.executeJobScript(ctx, &pod, podData.JobScript, filesPath)
 		if err != nil {
 			os.RemoveAll(filesPath)
 			return "", err
