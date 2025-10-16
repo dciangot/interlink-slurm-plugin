@@ -97,22 +97,6 @@ func LoadConfig() (*UnifiedConfig, error) {
 		if config.Containerd == nil {
 			return nil, fmt.Errorf("Containerd backend selected but no Containerd configuration provided")
 		}
-		// Set defaults for Containerd config
-		if config.Containerd.DataRootFolder == "" {
-			config.Containerd.DataRootFolder = "/var/interlink/containerd"
-		}
-		if config.Containerd.Socket == "" {
-			config.Containerd.Socket = "/run/containerd/containerd.sock"
-		}
-		if config.Containerd.Namespace == "" {
-			config.Containerd.Namespace = "interlink"
-		}
-		if config.Containerd.Snapshotter == "" {
-			config.Containerd.Snapshotter = "overlayfs"
-		}
-		if config.Containerd.Runtime == "" {
-			config.Containerd.Runtime = "io.containerd.runc.v2"
-		}
 	case BackendTypePodman:
 		if config.Podman == nil {
 			return nil, fmt.Errorf("Podman backend selected but no Podman configuration provided")
