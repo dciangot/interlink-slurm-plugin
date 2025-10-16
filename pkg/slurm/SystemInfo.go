@@ -25,7 +25,7 @@ type SystemInfoResponse struct {
 
 // SystemInfoHandler provides a health check endpoint that includes sinfo -s output
 // This allows monitoring the SLURM cluster status and node availability
-func (h *SidecarHandler) SystemInfoHandler(w http.ResponseWriter, r *http.Request) {
+func (h *SidecarHandler) SystemInfoHandler(w http.ResponseWriter, _ *http.Request) {
 	start := time.Now().UnixMicro()
 	tracer := otel.Tracer("interlink-API")
 	_, span := tracer.Start(h.Ctx, "SystemInfo", trace.WithAttributes(

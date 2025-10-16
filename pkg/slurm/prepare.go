@@ -271,7 +271,7 @@ func getRetrievedContainer(podData *commonIL.RetrievedPodData, containerName str
 	return nil, fmt.Errorf("could not find retrieved container for %s in pod %s", containerName, podData.Pod.Name)
 }
 
-func getRetrievedConfigMap(retrievedContainer *commonIL.RetrievedContainer, configMapName string, containerName string, podName string) (*v1.ConfigMap, error) {
+func getRetrievedConfigMap(retrievedContainer *commonIL.RetrievedContainer, configMapName string, _ string, podName string) (*v1.ConfigMap, error) {
 	for _, configMap := range retrievedContainer.ConfigMaps {
 		if configMap.Name == configMapName {
 			return &configMap, nil
@@ -280,7 +280,7 @@ func getRetrievedConfigMap(retrievedContainer *commonIL.RetrievedContainer, conf
 	return nil, fmt.Errorf("could not find configMap %s in container %s in pod %s", configMapName, containerName, podName)
 }
 
-func getRetrievedProjectedVolumeMap(retrievedContainer *commonIL.RetrievedContainer, projectedVolumeMapName string, containerName string, podName string) (*v1.ConfigMap, error) {
+func getRetrievedProjectedVolumeMap(retrievedContainer *commonIL.RetrievedContainer, projectedVolumeMapName string, _ string, podName string) (*v1.ConfigMap, error) {
 	for _, retrievedProjectedVolumeMap := range retrievedContainer.ProjectedVolumeMaps {
 		if retrievedProjectedVolumeMap.Name == projectedVolumeMapName {
 			return &retrievedProjectedVolumeMap, nil
@@ -290,7 +290,7 @@ func getRetrievedProjectedVolumeMap(retrievedContainer *commonIL.RetrievedContai
 	return nil, nil
 }
 
-func getRetrievedSecret(retrievedContainer *commonIL.RetrievedContainer, secretName string, containerName string, podName string) (*v1.Secret, error) {
+func getRetrievedSecret(retrievedContainer *commonIL.RetrievedContainer, secretName string, _ string, podName string) (*v1.Secret, error) {
 	for _, retrievedSecret := range retrievedContainer.Secrets {
 		if retrievedSecret.Name == secretName {
 			return &retrievedSecret, nil

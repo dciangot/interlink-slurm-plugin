@@ -91,15 +91,15 @@ func LoadConfig() (*UnifiedConfig, error) {
 		}
 	case BackendTypeDocker:
 		if config.Docker == nil {
-			return nil, fmt.Errorf("Docker backend selected but no Docker configuration provided")
+			return nil, fmt.Errorf("docker backend selected but no Docker configuration provided")
 		}
 	case BackendTypeContainerd:
 		if config.Containerd == nil {
-			return nil, fmt.Errorf("Containerd backend selected but no Containerd configuration provided")
+			return nil, fmt.Errorf("containerd backend selected but no Containerd configuration provided")
 		}
 	case BackendTypePodman:
 		if config.Podman == nil {
-			return nil, fmt.Errorf("Podman backend selected but no Podman configuration provided")
+			return nil, fmt.Errorf("podman backend selected but no Podman configuration provided")
 		}
 		// Set defaults for Podman config
 		if config.Podman.DataRootFolder == "" {

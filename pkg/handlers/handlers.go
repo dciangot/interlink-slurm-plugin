@@ -220,7 +220,7 @@ func (h *GenericHandler) GetLogsHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 // SystemInfoHandler handles system info requests
-func (h *GenericHandler) SystemInfoHandler(w http.ResponseWriter, r *http.Request) {
+func (h *GenericHandler) SystemInfoHandler(w http.ResponseWriter, _ *http.Request) {
 	start := time.Now().UnixMicro()
 	tracer := otel.Tracer("interlink-API")
 	spanCtx, span := tracer.Start(h.Ctx, "SystemInfo", trace.WithAttributes(

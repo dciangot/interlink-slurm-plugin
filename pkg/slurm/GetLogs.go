@@ -26,9 +26,9 @@ import (
 // Logs in follow mode (get logs until the death of the container) with "kubectl -f".
 func (h *SidecarHandler) GetLogsFollowMode(
 	spanCtx context.Context,
-	podUid string,
+	podUID string,
 	w http.ResponseWriter,
-	r *http.Request,
+	_ *http.Request,
 	path string,
 	req commonIL.LogStruct,
 	containerOutputPath string,

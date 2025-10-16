@@ -34,7 +34,7 @@ func NewSlurmBackend(ctx context.Context, config *slurm.SlurmConfig, jids *map[s
 }
 
 // Submit implements the BatchSystem interface for SLURM
-func (s *SlurmBackend) Submit(ctx context.Context, podData *commonIL.RetrievedPodData) (string, error) {
+func (s *SlurmBackend) Submit(_ context.Context, podData *commonIL.RetrievedPodData) (string, error) {
 	body, err := json.Marshal(podData)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal pod data: %w", err)
@@ -70,7 +70,7 @@ func (s *SlurmBackend) Submit(ctx context.Context, podData *commonIL.RetrievedPo
 }
 
 // Status implements the BatchSystem interface for SLURM
-func (s *SlurmBackend) Status(ctx context.Context, pods []*v1.Pod) ([]commonIL.PodStatus, error) {
+func (s *SlurmBackend) Status(_ context.Context, pods []*v1.Pod) ([]commonIL.PodStatus, error) {
 	body, err := json.Marshal(pods)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal pods: %w", err)
@@ -106,7 +106,7 @@ func (s *SlurmBackend) Status(ctx context.Context, pods []*v1.Pod) ([]commonIL.P
 }
 
 // Cancel implements the BatchSystem interface for SLURM
-func (s *SlurmBackend) Cancel(ctx context.Context, podUID string) error {
+func (s *SlurmBackend) Cancel(_ context.Context, podUID string) error {
 	// Create a minimal pod structure with just the UID
 	pod := v1.Pod{}
 	pod.UID = types.UID(podUID)
