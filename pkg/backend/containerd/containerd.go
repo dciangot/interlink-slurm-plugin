@@ -91,7 +91,7 @@ func (c *ContainerdBackend) Submit(ctx context.Context, podData *commonIL.Retrie
 
 	// Process init containers first
 	for _, container := range pod.Spec.InitContainers {
-		containerID, err := c.runContainer(ctx, pod, &container, filesPath, true)
+		containerID, err := c.runContainer(ctx, &pod, &container, filesPath, true)
 		if err != nil {
 			c.cleanup(ctx, jobInfo)
 			os.RemoveAll(filesPath)
