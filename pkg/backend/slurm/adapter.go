@@ -49,7 +49,10 @@ func (s *SlurmBackend) Submit(ctx context.Context, podData *commonIL.RetrievedPo
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return "", fmt.Errorf("submit failed with status %d and failed to read body: %w", resp.StatusCode, err)
+		}
 		return "", fmt.Errorf("submit failed with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
