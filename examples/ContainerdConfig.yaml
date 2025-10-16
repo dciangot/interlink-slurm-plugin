@@ -1,0 +1,64 @@
+# InterLink Containerd Backend Configuration
+# This configuration enables running Kubernetes pods as Containerd containers
+
+# Specify the backend type (required)
+BackendType: containerd
+
+# Containerd-specific configuration
+Containerd:
+  # Containerd socket path
+  # Default: /run/containerd/containerd.sock
+  Socket: "/run/containerd/containerd.sock"
+  
+  # Containerd namespace for container isolation
+  # All containers will be created in this namespace
+  # Default: interlink
+  Namespace: "interlink"
+  
+  # Root folder for storing job metadata and logs
+  # This directory will contain:
+  #   - Job metadata files (.metadata/*.json)
+  #   - Per-job directories with logs and working files
+  DataRootFolder: "/var/interlink/containerd"
+  
+  # Image prefix to prepend to container images (optional)
+  # Example: "docker.io/" will convert "nginx" to "docker.io/nginx"
+  ImagePrefix: "docker.io/"
+  
+  # Logging configuration
+  VerboseLogging: false
+  ErrorsOnlyLogging: false
+  
+  # Command prefix for container commands (optional)
+  # This prefix is prepended to all container commands
+  CommandPrefix: ""
+  
+  # Export ConfigMaps and Secrets as files
+  # When true, ConfigMaps and Secrets are written to the filesystem
+  # and mounted into containers
+  ExportPodData: true
+  
+  # Enable Kubernetes probe support
+  # When true, readiness, liveness, and startup probes are executed
+  EnableProbes: false
+  
+  # Snapshotter to use for container filesystem layers
+  # Options: overlayfs, native, btrfs, zfs, aufs
+  # Default: overlayfs
+  Snapshotter: "overlayfs"
+  
+  # Runtime to use for container execution
+  # Options: 
+  #   - io.containerd.runc.v2 (default, uses runc)
+  #   - io.containerd.runtime.v1.linux (legacy)
+  #   - io.containerd.kata.v2 (for Kata Containers)
+  # Default: io.containerd.runc.v2
+  Runtime: "io.containerd.runc.v2"
+
+# Note: The Containerd backend provides low-level container management
+# It uses the Containerd daemon which is also used by Docker and Kubernetes.
+# This backend is ideal for environments where:
+#   - You want OCI-compliant container execution
+#   - You need lightweight container runtime
+#   - You're building custom container platforms
+#   - You want direct access to Containerd features

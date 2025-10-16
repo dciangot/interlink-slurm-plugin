@@ -1,0 +1,81 @@
+# InterLink Podman Backend Configuration
+# This configuration enables running Kubernetes pods as Podman containers
+
+# Specify the backend type (required)
+BackendType: podman
+
+# Podman-specific configuration
+Podman:
+  # Podman API endpoint
+  # For rootless Podman: unix://$XDG_RUNTIME_DIR/podman/podman.sock
+  # For rootful Podman: unix:///run/podman/podman.sock
+  # For remote Podman: http://hostname:8080
+  # Default: Auto-detects (tries rootless first, then rootful)
+  Endpoint: "unix:///run/podman/podman.sock"
+  
+  # Podman API version (optional)
+  # Leave empty for auto-detection
+  # Example: "v3.0.0", "v4.0.0"
+  APIVersion: ""
+  
+  # Root folder for storing job metadata and logs
+  # This directory will contain:
+  #   - Job metadata files (.metadata/*.json)
+  #   - Per-job directories with logs and working files
+  DataRootFolder: "/var/interlink/podman"
+  
+  # Image prefix to prepend to container images (optional)
+  # Example: "docker.io/" will convert "nginx" to "docker.io/nginx"
+  ImagePrefix: "docker.io/"
+  
+  # Logging configuration
+  VerboseLogging: false
+  ErrorsOnlyLogging: false
+  
+  # Namespace for pod isolation (informational)
+  Namespace: "default"
+  
+  # Command prefix for container commands (optional)
+  # This prefix is prepended to all container commands
+  CommandPrefix: ""
+  
+  # Export ConfigMaps and Secrets as files
+  # When true, ConfigMaps and Secrets are written to the filesystem
+  # and mounted into containers
+  ExportPodData: true
+  
+  # Enable Kubernetes probe support
+  # When true, readiness, liveness, and startup probes are executed
+  EnableProbes: false
+  
+  # Use Podman pods (recommended)
+  # When true, creates a Podman pod for each Kubernetes pod
+  # This groups containers together and provides shared network namespace
+  # When false, containers run independently
+  UsePods: true
+  
+  # Network mode for containers
+  # Options: bridge, host, none, or a custom network name
+  # Only applies when UsePods is false
+  # When UsePods is true, the pod manages networking
+  NetworkMode: "bridge"
+
+# Note: The Podman backend provides daemonless container management
+# Podman is designed to be a drop-in replacement for Docker with:
+#   - Daemonless architecture (no background service required)
+#   - Rootless container support out of the box
+#   - Native support for pods (similar to Kubernetes)
+#   - OCI-compliant container execution
+#   - Compatible with Docker images and commands
+#
+# This backend is ideal for:
+#   - Rootless container environments
+#   - Security-focused deployments
+#   - Environments without Docker daemon
+#   - Edge computing with limited resources
+#   - Development on Linux workstations
+
+# Rootless Podman Setup:
+# To use rootless Podman, ensure the socket is accessible:
+#   podman system service --time=0 unix://$XDG_RUNTIME_DIR/podman/podman.sock &
+# Then update Endpoint to: unix:///run/user/$(id -u)/podman/podman.sock

@@ -1,0 +1,50 @@
+# InterLink Docker Backend Configuration
+# This configuration enables running Kubernetes pods as Docker containers on a single node
+
+# Specify the backend type (required)
+BackendType: docker
+
+# Docker-specific configuration
+Docker:
+  # Docker daemon endpoint
+  # Default: unix:///var/run/docker.sock
+  # For remote Docker: tcp://hostname:2375
+  Endpoint: "unix:///var/run/docker.sock"
+  
+  # Docker network to attach containers to
+  # Leave empty to use default bridge network
+  Network: ""
+  
+  # Root folder for storing job metadata and logs
+  # This directory will contain:
+  #   - Job metadata files (.metadata/*.json)
+  #   - Per-job directories with logs and working files
+  DataRootFolder: "/var/interlink/docker"
+  
+  # Image prefix to prepend to container images (optional)
+  # Example: "docker.io/" will convert "nginx" to "docker.io/nginx"
+  ImagePrefix: ""
+  
+  # Logging configuration
+  VerboseLogging: false
+  ErrorsOnlyLogging: false
+  
+  # Namespace for pod isolation (informational)
+  Namespace: "default"
+  
+  # Command prefix for container commands (optional)
+  # This prefix is prepended to all container commands
+  CommandPrefix: ""
+  
+  # Export ConfigMaps and Secrets as files
+  # When true, ConfigMaps and Secrets are written to the filesystem
+  # and mounted into containers
+  ExportPodData: true
+  
+  # Enable Kubernetes probe support
+  # When true, readiness, liveness, and startup probes are executed
+  EnableProbes: false
+
+# Note: The Docker backend runs containers directly without a queue system.
+# Each Kubernetes pod maps to one or more Docker containers that are started immediately.
+# Init containers run sequentially and wait for completion before starting regular containers.

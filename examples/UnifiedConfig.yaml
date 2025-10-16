@@ -1,0 +1,100 @@
+# InterLink Unified Backend Configuration
+# This file demonstrates how to configure any supported backend
+
+# ============================================================================
+# BACKEND SELECTION
+# ============================================================================
+# Choose which backend to use: "slurm", "docker", "containerd", or "podman"
+BackendType: docker
+
+# ============================================================================
+# SLURM BACKEND CONFIGURATION
+# ============================================================================
+# Used when BackendType is "slurm"
+SLURM:
+  VKConfigPath: "/etc/interlink/VKConfig.yaml"
+  SbatchPath: "sbatch"
+  ScancelPath: "scancel"
+  SqueuePath: "squeue"
+  SinfoPath: "sinfo"
+  SidecarPort: "4000"
+  Socket: ""  # Use TCP port, or set to "unix:///path/to/socket" for Unix socket
+  ExportPodData: true
+  CommandPrefix: ""
+  ImagePrefix: ""
+  DataRootFolder: "/var/interlink/slurm"
+  Namespace: "default"
+  Tsocks: false
+  TsocksPath: "tsocks"
+  TsocksLoginNode: ""
+  BashPath: "/bin/bash"
+  VerboseLogging: false
+  ErrorsOnlyLogging: false
+  SingularityDefaultOptions: ["--bind /tmp:/tmp"]
+  SingularityPrefix: ""
+  SingularityPath: "singularity"
+  EnableProbes: true
+  ContainerRuntime: "singularity"  # or "enroot"
+  EnrootDefaultOptions: ["--rw"]
+  EnrootPrefix: ""
+  EnrootPath: "enroot"
+
+# ============================================================================
+# DOCKER BACKEND CONFIGURATION
+# ============================================================================
+# Used when BackendType is "docker"
+Docker:
+  Endpoint: "unix:///var/run/docker.sock"
+  Network: ""
+  DataRootFolder: "/var/interlink/docker"
+  ImagePrefix: ""
+  VerboseLogging: true
+  ErrorsOnlyLogging: false
+  Namespace: "default"
+  CommandPrefix: ""
+  ExportPodData: true
+  EnableProbes: false
+
+# ============================================================================
+# CONTAINERD BACKEND CONFIGURATION
+# ============================================================================
+# Used when BackendType is "containerd"
+Containerd:
+  Socket: "/run/containerd/containerd.sock"
+  Namespace: "interlink"
+  DataRootFolder: "/var/interlink/containerd"
+  ImagePrefix: "docker.io/"
+  VerboseLogging: false
+  ErrorsOnlyLogging: false
+  CommandPrefix: ""
+  ExportPodData: true
+  EnableProbes: false
+  Snapshotter: "overlayfs"
+  Runtime: "io.containerd.runc.v2"
+
+# ============================================================================
+# PODMAN BACKEND CONFIGURATION
+# ============================================================================
+# Used when BackendType is "podman"
+Podman:
+  Endpoint: "unix:///run/podman/podman.sock"
+  APIVersion: ""
+  DataRootFolder: "/var/interlink/podman"
+  ImagePrefix: "docker.io/"
+  VerboseLogging: false
+  ErrorsOnlyLogging: false
+  Namespace: "default"
+  CommandPrefix: ""
+  ExportPodData: true
+  EnableProbes: false
+  UsePods: true
+  NetworkMode: "bridge"
+
+# ============================================================================
+# ENVIRONMENT VARIABLES (for backward compatibility)
+# ============================================================================
+# You can also set these environment variables:
+#   - INTERLINK_CONFIG_PATH: Path to this config file
+#   - SLURMCONFIGPATH: Legacy path to SLURM config (for backward compatibility)
+#   - ENABLE_TRACING: Set to "1" to enable OpenTelemetry tracing
+#   - TELEMETRY_ENDPOINT: OpenTelemetry collector endpoint (default: localhost:4317)
