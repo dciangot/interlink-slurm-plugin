@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/containerd/containerd/log"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/mount"
+	"github.com/moby/moby/client"
 	v1 "k8s.io/api/core/v1"
 
 	commonIL "github.com/interlink-hq/interlink/pkg/interlink"
