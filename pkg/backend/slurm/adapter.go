@@ -183,14 +183,12 @@ func (s *SlurmBackend) SystemInfo(ctx context.Context) (string, error) {
 
 // CreateDirectories implements the BatchSystem interface for SLURM
 func (s *SlurmBackend) CreateDirectories() error {
-	s.handler.CreateDirectories()
-	return nil
+	return s.handler.CreateDirectories()
 }
 
 // LoadJobs implements the BatchSystem interface for SLURM
 func (s *SlurmBackend) LoadJobs() error {
-	s.handler.LoadJIDs()
-	return nil
+	return s.handler.LoadJIDs()
 }
 
 // GetJobID implements the BatchSystem interface for SLURM
