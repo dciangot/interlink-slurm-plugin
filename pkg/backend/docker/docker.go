@@ -88,7 +88,7 @@ func (d *DockerBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 
 	// Process init containers first
 	for _, container := range pod.Spec.InitContainers {
-		containerID, err := d.runContainer(ctx, pod, &container, filesPath, true)
+		containerID, err := d.runContainer(ctx, &pod, &container, filesPath, true)
 		if err != nil {
 			d.cleanup(ctx, jobInfo)
 			os.RemoveAll(filesPath)
