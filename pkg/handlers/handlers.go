@@ -194,7 +194,7 @@ func (h *GenericHandler) GetLogsHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var logRequest commonIL.LogRequest
+	var logRequest commonIL.LogStruct
 	if err := json.Unmarshal(bodyBytes, &logRequest); err != nil {
 		statusCode = http.StatusInternalServerError
 		h.handleError(spanCtx, w, statusCode, err)
