@@ -6,7 +6,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/backend/containerd"
 	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/backend/docker"
+	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/backend/podman"
 	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/slurm"
 )
 
