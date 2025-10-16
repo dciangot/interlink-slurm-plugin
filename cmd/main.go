@@ -24,7 +24,12 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
-	slurm "github.com/intertwin-eu/interlink-slurm-plugin/pkg/slurm"
+	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/backend"
+	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/backend/docker"
+	slurmbackend "github.com/intertwin-eu/interlink-slurm-plugin/pkg/backend/slurm"
+	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/config"
+	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/handlers"
+	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/slurm"
 
 	"github.com/virtual-kubelet/virtual-kubelet/trace"
 	"github.com/virtual-kubelet/virtual-kubelet/trace/opentelemetry"
@@ -145,17 +150,30 @@ func initProvider(ctx context.Context) (func(context.Context) error, error) {
 
 	return tracerProvider.Shutdown, nil
 }
+
 func main() {
 	logger := logrus.StandardLogger()
 
-	slurmConfig, err := slurm.NewSlurmConfig()
+	// Load unified configuration
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to load configuration: %w", err))
 	}
 
-	if slurmConfig.VerboseLogging {
+	// Set up logging based on backend configuration
+	var verboseLogging, errorsOnlyLogging bool
+	switch cfg.BackendType {
+	case config.BackendTypeSLURM:
+		verboseLogging = cfg.SLURM.VerboseLogging
+		errorsOnlyLogging = cfg.SLURM.ErrorsOnlyLogging
+	case config.BackendTypeDocker:
+		verboseLogging = cfg.Docker.VerboseLogging
+		errorsOnlyLogging = cfg.Docker.ErrorsOnlyLogging
+	}
+
+	if verboseLogging {
 		logger.SetLevel(logrus.DebugLevel)
-	} else if slurmConfig.ErrorsOnlyLogging {
+	} else if errorsOnlyLogging {
 		logger.SetLevel(logrus.ErrorLevel)
 	} else {
 		logger.SetLevel(logrus.InfoLevel)
@@ -163,10 +181,10 @@ func main() {
 
 	log.L = logruslogger.FromLogrus(logrus.NewEntry(logger))
 
-	JobIDs := make(map[string]*slurm.JidStruct)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Set up tracing if enabled
 	if os.Getenv("ENABLE_TRACING") == "1" {
 		shutdown, err := initProvider(ctx)
 		if err != nil {
@@ -184,27 +202,64 @@ func main() {
 		trace.T = opentelemetry.Adapter{}
 	}
 
-	log.G(ctx).Debug("Debug level: " + strconv.FormatBool(slurmConfig.VerboseLogging))
+	log.G(ctx).Info("Backend type: ", cfg.BackendType)
+	log.G(ctx).Debug("Debug level: " + strconv.FormatBool(verboseLogging))
 
-	SidecarAPIs := slurm.SidecarHandler{
-		Config: slurmConfig,
-		JIDs:   &JobIDs,
-		Ctx:    ctx,
+	// Initialize the appropriate backend
+	var batchSystem backend.BatchSystem
+
+	switch cfg.BackendType {
+	case config.BackendTypeSLURM:
+		log.G(ctx).Info("Initializing SLURM backend")
+		JobIDs := make(map[string]*slurm.JidStruct)
+		batchSystem = slurmbackend.NewSlurmBackend(ctx, cfg.SLURM, &JobIDs)
+
+	case config.BackendTypeDocker:
+		log.G(ctx).Info("Initializing Docker backend")
+		dockerBackend, err := docker.NewDockerBackend(ctx, cfg.Docker)
+		if err != nil {
+			log.G(ctx).Fatal("Failed to initialize Docker backend: ", err)
+		}
+		batchSystem = dockerBackend
+
+	default:
+		log.G(ctx).Fatal("Unknown backend type: ", cfg.BackendType)
 	}
 
+	// Create generic handlers
+	genericHandler := &handlers.GenericHandler{
+		Backend: batchSystem,
+		Ctx:     ctx,
+	}
+
+	// Set up HTTP routes
 	mutex := http.NewServeMux()
-	mutex.HandleFunc("/status", SidecarAPIs.StatusHandler)
-	mutex.HandleFunc("/create", SidecarAPIs.SubmitHandler)
-	mutex.HandleFunc("/delete", SidecarAPIs.StopHandler)
-	mutex.HandleFunc("/getLogs", SidecarAPIs.GetLogsHandler)
-	mutex.HandleFunc("/system-info", SidecarAPIs.SystemInfoHandler)
+	mutex.HandleFunc("/status", genericHandler.StatusHandler)
+	mutex.HandleFunc("/create", genericHandler.SubmitHandler)
+	mutex.HandleFunc("/delete", genericHandler.StopHandler)
+	mutex.HandleFunc("/getLogs", genericHandler.GetLogsHandler)
+	mutex.HandleFunc("/system-info", genericHandler.SystemInfoHandler)
 
-	SidecarAPIs.CreateDirectories()
-	SidecarAPIs.LoadJIDs()
+	// Initialize backend storage and load existing jobs
+	batchSystem.CreateDirectories()
+	batchSystem.LoadJobs()
 
-	if strings.HasPrefix(slurmConfig.Socket, "unix://") {
+	// Determine socket/port from configuration
+	var socket, sidecarPort string
+	switch cfg.BackendType {
+	case config.BackendTypeSLURM:
+		socket = cfg.SLURM.Socket
+		sidecarPort = cfg.SLURM.Sidecarport
+	case config.BackendTypeDocker:
+		// Docker backend uses port by default
+		sidecarPort = "4000"
+	}
+
+	// Start HTTP server
+	if strings.HasPrefix(socket, "unix://") {
 		// Create a Unix domain socket and listen for incoming connections.
-		socket, err := net.Listen("unix", strings.ReplaceAll(slurmConfig.Socket, "unix://", ""))
+		socketPath := strings.ReplaceAll(socket, "unix://", "")
+		unixSocket, err := net.Listen("unix", socketPath)
 		if err != nil {
 			panic(err)
 		}
@@ -214,20 +269,21 @@ func main() {
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		go func() {
 			<-c
-			os.Remove(strings.ReplaceAll(slurmConfig.Socket, "unix://", ""))
+			os.Remove(socketPath)
 			os.Exit(1)
 		}()
 		server := http.Server{
 			Handler: mutex,
 		}
 
-		log.G(ctx).Info(socket)
+		log.G(ctx).Info("Listening on Unix socket: ", socketPath)
 
-		if err := server.Serve(socket); err != nil {
+		if err := server.Serve(unixSocket); err != nil {
 			log.G(ctx).Fatal(err)
 		}
 	} else {
-		err = http.ListenAndServe(":"+slurmConfig.Sidecarport, mutex)
+		log.G(ctx).Info("Listening on TCP port: ", sidecarPort)
+		err = http.ListenAndServe(":"+sidecarPort, mutex)
 		if err != nil {
 			log.G(ctx).Fatal(err)
 		}
