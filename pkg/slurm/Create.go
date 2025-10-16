@@ -197,7 +197,7 @@ func (h *SidecarHandler) SubmitHandler(w http.ResponseWriter, r *http.Request) {
 			log.G(h.Ctx).Error(err)
 			span.AddEvent("Failed to submit the SLURM Job")
 			h.handleError(spanCtx, w, http.StatusInternalServerError, err)
-			//os.RemoveAll(filesPath)
+			// os.RemoveAll(filesPath)
 			return
 		}
 
@@ -214,7 +214,7 @@ func (h *SidecarHandler) SubmitHandler(w http.ResponseWriter, r *http.Request) {
 			log.G(h.Ctx).Error(err)
 			span.AddEvent("Failed to submit the SLURM Job")
 			h.handleError(spanCtx, w, http.StatusInternalServerError, err)
-			//os.RemoveAll(filesPath)
+			// os.RemoveAll(filesPath)
 			return
 		}
 		runtime_command_pod := append([]ContainerCommand{}, ContainerCommand{

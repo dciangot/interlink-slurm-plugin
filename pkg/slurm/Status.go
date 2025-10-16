@@ -134,7 +134,7 @@ func (h *SidecarHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 							return
 						}
 
-						status, err := strconv.Atoi(strings.Replace(string(statusb), "\n", "", -1))
+						status, err := strconv.Atoi(strings.ReplaceAll(string(statusb), "\n", ""))
 						if err != nil {
 							statusCode = http.StatusInternalServerError
 							h.handleError(spanCtx, w, statusCode, fmt.Errorf(sessionContextMessage+"unable to convert container status: %s", err))

@@ -239,7 +239,7 @@ func prepareEnvs(Ctx context.Context, config SlurmConfig, podData commonIL.Retri
 	start := time.Now().UnixMicro()
 	span := trace.SpanFromContext(Ctx)
 	span.AddEvent("Preparing ENVs for container " + container.Name)
-	var envs []string = []string{}
+	var envs = []string{}
 	// For debugging purpose only
 	envs_data := []string{}
 	var err error
@@ -878,7 +878,7 @@ highestExitCode=0
 		}
 		stringToBeWritten.WriteString(containerCommand.containerName)
 		stringToBeWritten.WriteString(" ")
-		stringToBeWritten.WriteString(strings.Join(containerCommand.runtimeCommand[:], " "))
+		stringToBeWritten.WriteString(strings.Join(containerCommand.runtimeCommand, " "))
 
 		if containerCommand.containerCommand != nil {
 			// Case the pod specified a container entrypoint array to override.
@@ -1359,7 +1359,7 @@ func getExitCode(ctx context.Context, path string, ctName string, exitCodeMatch 
 			}
 		}
 	}
-	exitCodeInt, err := strconv.Atoi(strings.Replace(string(exitCode), "\n", "", -1))
+	exitCodeInt, err := strconv.Atoi(strings.ReplaceAll(string(exitCode), "\n", ""))
 	if err != nil {
 		log.G(ctx).Error(err)
 		return 0, err

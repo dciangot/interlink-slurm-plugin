@@ -90,7 +90,7 @@ func (h *SidecarHandler) GetLogsFollowMode(
 
 	// Looping until we get end of job.
 	// TODO: handle the Ctrl+C of kubectl logs.
-	var isContainerDead bool = false
+	var isContainerDead = false
 	for {
 		n, errRead := containerOutputReader.Read(bufferBytes)
 		if errRead != nil && errRead != io.EOF {
