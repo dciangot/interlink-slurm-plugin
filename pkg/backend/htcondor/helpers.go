@@ -1,3 +1,6 @@
+-e //go:build htcondor
+// +build htcondor
+
 package htcondor
 
 import (
@@ -20,7 +23,9 @@ func (h *HTCondorBackend) executeCommand(ctx context.Context, cmdStr string) (st
 	output, err := cmd.CombinedOutput()
 	
 	if err != nil {
-		log.G(ctx).Errorf("Command failed: %s\nOutput: %s\nError: %v", cmdStr, string(output), err)
+		log.G(ctx).Errorf("Command failed: %s
+Output: %s
+Error: %v", cmdStr, string(output), err)
 		return string(output), fmt.Errorf("command execution failed: %w", err)
 	}
 	
@@ -103,7 +108,7 @@ func (h *HTCondorBackend) sanitizeJobName(name string) string {
 	replacer := strings.NewReplacer(
 		" ", "_",
 		"/", "_",
-		"\\", "_",
+		"\", "_",
 		":", "_",
 		"*", "_",
 		"?", "_",
@@ -289,7 +294,7 @@ func removeString(slice []string, str string) []string {
 // escapeShellArg escapes a string for safe use in shell commands
 func escapeShellArg(arg string) string {
 	// Simple escaping - wrap in single quotes and escape existing single quotes
-	return "'" + strings.ReplaceAll(arg, "'", "'\\''") + "'"
+	return "'" + strings.ReplaceAll(arg, "'", "'\''") + "'"
 }
 
 // buildSingularityBindString builds a bind mount string for Singularity

@@ -1,3 +1,6 @@
+-e //go:build htcondor
+// +build htcondor
+
 package htcondor
 
 import (
@@ -124,7 +127,8 @@ func extractJSONField(jsonStr, fieldName string) string {
 	remaining := jsonStr[start:]
 	
 	// Skip whitespace
-	remaining = strings.TrimLeft(remaining, " \t\n")
+	remaining = strings.TrimLeft(remaining, " 	
+")
 	
 	// Extract value (up to comma or closing brace)
 	var value string
@@ -137,7 +141,8 @@ func extractJSONField(jsonStr, fieldName string) string {
 		value = remaining[1 : endIdx+1]
 	} else {
 		// Numeric value
-		endIdx := strings.IndexAny(remaining, ",\n}")
+		endIdx := strings.IndexAny(remaining, ",
+}")
 		if endIdx == -1 {
 			endIdx = len(remaining)
 		}

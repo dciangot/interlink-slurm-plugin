@@ -1,3 +1,6 @@
+-e //go:build htcondor
+// +build htcondor
+
 package htcondor
 
 import (
@@ -195,13 +198,19 @@ func (h *HTCondorBackend) generateSubmitFile(
 	containerName := container.Name
 
 	// Header
-	sb.WriteString("# HTCondor Submit File\n")
-	sb.WriteString(fmt.Sprintf("# Generated for pod: %s/%s\n", podData.Pod.Namespace, podData.Pod.Name))
-	sb.WriteString(fmt.Sprintf("# Container: %s\n", containerName))
-	sb.WriteString(fmt.Sprintf("# Is Init Container: %v\n\n", isInit))
+	sb.WriteString("# HTCondor Submit File
+")
+	sb.WriteString(fmt.Sprintf("# Generated for pod: %s/%s
+", podData.Pod.Namespace, podData.Pod.Name))
+	sb.WriteString(fmt.Sprintf("# Container: %s
+", containerName))
+	sb.WriteString(fmt.Sprintf("# Is Init Container: %v
+
+", isInit))
 
 	// Universe
-	sb.WriteString("universe = vanilla\n")
+	sb.WriteString("universe = vanilla
+")
 
 	// Executable - use wrapper script
 	wrapperScript := h.generateWrapperScript(ctx, singularityCmd, container, spoolDir)
@@ -209,32 +218,42 @@ func (h *HTCondorBackend) generateSubmitFile(
 	if err := os.WriteFile(wrapperPath, []byte(wrapperScript), 0755); err != nil {
 		return "", fmt.Errorf("failed to write wrapper script: %w", err)
 	}
-	sb.WriteString(fmt.Sprintf("executable = %s\n", wrapperPath))
+	sb.WriteString(fmt.Sprintf("executable = %s
+", wrapperPath))
 
 	// Output, Error, Log files
-	sb.WriteString(fmt.Sprintf("output = %s/output-%s-%s.txt\n", spoolDir, podUID, containerName))
-	sb.WriteString(fmt.Sprintf("error = %s/error-%s-%s.txt\n", spoolDir, podUID, containerName))
-	sb.WriteString(fmt.Sprintf("log = %s/log-%s-%s.txt\n", spoolDir, podUID, containerName))
+	sb.WriteString(fmt.Sprintf("output = %s/output-%s-%s.txt
+", spoolDir, podUID, containerName))
+	sb.WriteString(fmt.Sprintf("error = %s/error-%s-%s.txt
+", spoolDir, podUID, containerName))
+	sb.WriteString(fmt.Sprintf("log = %s/log-%s-%s.txt
+", spoolDir, podUID, containerName))
 
 	// Resource requirements
 	cpuLimit := container.Resources.Limits.Cpu().AsApproximateFloat64()
 	memoryLimit := container.Resources.Limits.Memory().Value() / (1024 * 1024) // Convert to MB
 
 	if cpuLimit > 0 {
-		sb.WriteString(fmt.Sprintf("request_cpus = %d\n", int(cpuLimit)+1))
+		sb.WriteString(fmt.Sprintf("request_cpus = %d
+", int(cpuLimit)+1))
 	} else {
-		sb.WriteString("request_cpus = 1\n")
+		sb.WriteString("request_cpus = 1
+")
 	}
 
 	if memoryLimit > 0 {
-		sb.WriteString(fmt.Sprintf("request_memory = %d MB\n", memoryLimit))
+		sb.WriteString(fmt.Sprintf("request_memory = %d MB
+", memoryLimit))
 	} else {
-		sb.WriteString("request_memory = 1024 MB\n")
+		sb.WriteString("request_memory = 1024 MB
+")
 	}
 
 	// File transfer
-	sb.WriteString("should_transfer_files = YES\n")
-	sb.WriteString("when_to_transfer_output = ON_EXIT\n")
+	sb.WriteString("should_transfer_files = YES
+")
+	sb.WriteString("when_to_transfer_output = ON_EXIT
+")
 
 	// Build transfer_input_files list
 	inputFiles := []string{wrapperPath}
@@ -256,29 +275,38 @@ func (h *HTCondorBackend) generateSubmitFile(
 	}
 
 	if len(inputFiles) > 0 {
-		sb.WriteString(fmt.Sprintf("transfer_input_files = %s\n", strings.Join(inputFiles, ",")))
+		sb.WriteString(fmt.Sprintf("transfer_input_files = %s
+", strings.Join(inputFiles, ",")))
 	}
 
 	// Transfer output files (logs)
-	sb.WriteString("transfer_output_files = \n") // Empty for now, logs are in output/error files
+	sb.WriteString("transfer_output_files = 
+") // Empty for now, logs are in output/error files
 
 	// Job requirements and preferences
 	if h.config.Requirements != "" {
-		sb.WriteString(fmt.Sprintf("requirements = %s\n", h.config.Requirements))
+		sb.WriteString(fmt.Sprintf("requirements = %s
+", h.config.Requirements))
 	}
 
 	// Custom ClassAds from pod annotations
 	if classAds, ok := podData.Pod.Annotations["htcondor.interlink.io/classads"]; ok {
-		sb.WriteString("\n# Custom ClassAds\n")
+		sb.WriteString("
+# Custom ClassAds
+")
 		sb.WriteString(classAds)
-		sb.WriteString("\n")
+		sb.WriteString("
+")
 	}
 
 	// Job notification
-	sb.WriteString("notification = Never\n")
+	sb.WriteString("notification = Never
+")
 
 	// Queue the job
-	sb.WriteString("\nqueue 1\n")
+	sb.WriteString("
+queue 1
+")
 
 	return sb.String(), nil
 }
@@ -292,52 +320,91 @@ func (h *HTCondorBackend) generateWrapperScript(
 ) string {
 	var sb strings.Builder
 
-	sb.WriteString("#!/bin/bash\n\n")
-	sb.WriteString("set -e\n\n")
+	sb.WriteString("#!/bin/bash
 
-	sb.WriteString("# HTCondor Job Wrapper Script\n")
-	sb.WriteString(fmt.Sprintf("# Container: %s\n\n", container.Name))
+")
+	sb.WriteString("set -e
+
+")
+
+	sb.WriteString("# HTCondor Job Wrapper Script
+")
+	sb.WriteString(fmt.Sprintf("# Container: %s
+
+", container.Name))
 
 	// Extract ConfigMaps and Secrets if present
-	sb.WriteString("# Extract ConfigMaps and Secrets\n")
-	sb.WriteString("mkdir -p configmaps secrets emptydir\n\n")
+	sb.WriteString("# Extract ConfigMaps and Secrets
+")
+	sb.WriteString("mkdir -p configmaps secrets emptydir
 
-	sb.WriteString("for archive in configmap-*.tar.gz; do\n")
-	sb.WriteString("  if [ -f \"$archive\" ]; then\n")
-	sb.WriteString("    name=$(echo $archive | sed 's/configmap-\\(.*\\)\\.tar\\.gz/\\1/')\n")
-	sb.WriteString("    mkdir -p configmaps/$name\n")
-	sb.WriteString("    tar -xzf $archive -C configmaps/$name\n")
-	sb.WriteString("    echo \"Extracted ConfigMap: $name\"\n")
-	sb.WriteString("  fi\n")
-	sb.WriteString("done\n\n")
+")
 
-	sb.WriteString("for archive in secret-*.tar.gz; do\n")
-	sb.WriteString("  if [ -f \"$archive\" ]; then\n")
-	sb.WriteString("    name=$(echo $archive | sed 's/secret-\\(.*\\)\\.tar\\.gz/\\1/')\n")
-	sb.WriteString("    mkdir -p secrets/$name\n")
-	sb.WriteString("    tar -xzf $archive -C secrets/$name\n")
-	sb.WriteString("    echo \"Extracted Secret: $name\"\n")
-	sb.WriteString("  fi\n")
-	sb.WriteString("done\n\n")
+	sb.WriteString("for archive in configmap-*.tar.gz; do
+")
+	sb.WriteString("  if [ -f \"$archive\" ]; then
+")
+	sb.WriteString("    name=$(echo $archive | sed 's/configmap-\(.*\)\.tar\.gz/\1/')
+")
+	sb.WriteString("    mkdir -p configmaps/$name
+")
+	sb.WriteString("    tar -xzf $archive -C configmaps/$name
+")
+	sb.WriteString("    echo \"Extracted ConfigMap: $name\"
+")
+	sb.WriteString("  fi
+")
+	sb.WriteString("done
+
+")
+
+	sb.WriteString("for archive in secret-*.tar.gz; do
+")
+	sb.WriteString("  if [ -f \"$archive\" ]; then
+")
+	sb.WriteString("    name=$(echo $archive | sed 's/secret-\(.*\)\.tar\.gz/\1/')
+")
+	sb.WriteString("    mkdir -p secrets/$name
+")
+	sb.WriteString("    tar -xzf $archive -C secrets/$name
+")
+	sb.WriteString("    echo \"Extracted Secret: $name\"
+")
+	sb.WriteString("  fi
+")
+	sb.WriteString("done
+
+")
 
 	// Create EmptyDir directories
-	sb.WriteString("# Create EmptyDir directories\n")
-	sb.WriteString("# (Will be created based on bind mounts)\n\n")
+	sb.WriteString("# Create EmptyDir directories
+")
+	sb.WriteString("# (Will be created based on bind mounts)
+
+")
 
 	// Environment variables
-	sb.WriteString("# Set environment variables\n")
+	sb.WriteString("# Set environment variables
+")
 	for _, env := range container.Env {
-		sb.WriteString(fmt.Sprintf("export %s=\"%s\"\n", env.Name, env.Value))
+		sb.WriteString(fmt.Sprintf("export %s=\"%s\"
+", env.Name, env.Value))
 	}
-	sb.WriteString("\n")
+	sb.WriteString("
+")
 
 	// Run Singularity
-	sb.WriteString("# Execute Singularity container\n")
-	sb.WriteString("echo \"Starting container execution...\"\n")
+	sb.WriteString("# Execute Singularity container
+")
+	sb.WriteString("echo \"Starting container execution...\"
+")
 	sb.WriteString(singularityCmd)
-	sb.WriteString("\n\n")
+	sb.WriteString("
 
-	sb.WriteString("echo \"Container execution completed\"\n")
+")
+
+	sb.WriteString("echo \"Container execution completed\"
+")
 
 	return sb.String()
 }
@@ -354,7 +421,8 @@ func (h *HTCondorBackend) executeCondorSubmit(ctx context.Context, submitFilePat
 	}
 
 	// Parse job ID from output
-	// Expected format: "Submitting job(s).\n1 job(s) submitted to cluster 12345."
+	// Expected format: "Submitting job(s).
+1 job(s) submitted to cluster 12345."
 	jobID, err := h.parseCondorSubmitOutput(output)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse job ID from condor_submit output: %w", err)
@@ -366,7 +434,8 @@ func (h *HTCondorBackend) executeCondorSubmit(ctx context.Context, submitFilePat
 // parseCondorSubmitOutput extracts the cluster ID from condor_submit output
 func (h *HTCondorBackend) parseCondorSubmitOutput(output string) (string, error) {
 	// Look for pattern: "submitted to cluster XXXX"
-	lines := strings.Split(output, "\n")
+	lines := strings.Split(output, "
+")
 	for _, line := range lines {
 		if strings.Contains(line, "submitted to cluster") {
 			fields := strings.Fields(line)
@@ -439,8 +508,15 @@ func (h *HTCondorBackend) submitContainerDependency(
 	// Insert before "queue 1"
 	submitContent = strings.Replace(
 		submitContent,
-		"\nqueue 1\n",
-		fmt.Sprintf("\n# Job dependency\nDAGMan_status = %s\n\nqueue 1\n", dependsOnJobID),
+		"
+queue 1
+",
+		fmt.Sprintf("
+# Job dependency
+DAGMan_status = %s
+
+queue 1
+", dependsOnJobID),
 		1,
 	)
 
