@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	commonIL "github.com/interlink-hq/interlink/pkg/interlink"
 	"github.com/intertwin-eu/interlink-slurm-plugin/pkg/backend"
