@@ -265,8 +265,12 @@ func main() {
 	mutex.HandleFunc("/system-info", genericHandler.SystemInfoHandler)
 
 	// Initialize backend storage and load existing jobs
-	batchSystem.CreateDirectories()
-	batchSystem.LoadJobs()
+	if err := batchSystem.CreateDirectories(); err != nil {
+		log.G(ctx).Warn("Failed to create directories: ", err)
+	}
+	if err := batchSystem.LoadJobs(); err != nil {
+		log.G(ctx).Warn("Failed to load existing jobs: ", err)
+	}
 
 	// Determine socket/port from configuration
 	var socket, sidecarPort string
