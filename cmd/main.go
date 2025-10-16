@@ -178,6 +178,9 @@ func main() {
 	case config.BackendTypePodman:
 		verboseLogging = cfg.Podman.VerboseLogging
 		errorsOnlyLogging = cfg.Podman.ErrorsOnlyLogging
+	case config.BackendTypeHTCondor:
+		verboseLogging = cfg.HTCondor.VerboseLogging
+		errorsOnlyLogging = cfg.HTCondor.ErrorsOnlyLogging
 	}
 
 	if verboseLogging {
