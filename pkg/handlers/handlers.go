@@ -201,10 +201,7 @@ func (h *GenericHandler) GetLogsHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	tailLines := 0
-	if logRequest.Opts.TailLines != nil {
-		tailLines = int(*logRequest.Opts.TailLines)
-	}
+	tailLines := logRequest.Opts.Tail
 
 	reader, err := h.Backend.GetLogs(spanCtx, logRequest.PodUID, logRequest.ContainerName, logRequest.Opts.Follow, tailLines)
 	if err != nil {
