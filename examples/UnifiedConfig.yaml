@@ -56,6 +56,41 @@ Docker:
   EnableProbes: false
 
 # ============================================================================
+# CONTAINERD BACKEND CONFIGURATION
+# ============================================================================
+# Used when BackendType is "containerd"
+Containerd:
+  Socket: "/run/containerd/containerd.sock"
+  Namespace: "interlink"
+  DataRootFolder: "/var/interlink/containerd"
+  ImagePrefix: "docker.io/"
+  VerboseLogging: false
+  ErrorsOnlyLogging: false
+  CommandPrefix: ""
+  ExportPodData: true
+  EnableProbes: false
+  Snapshotter: "overlayfs"
+  Runtime: "io.containerd.runc.v2"
+
+# ============================================================================
+# PODMAN BACKEND CONFIGURATION
+# ============================================================================
+# Used when BackendType is "podman"
+Podman:
+  Endpoint: "unix:///run/podman/podman.sock"
+  APIVersion: ""
+  DataRootFolder: "/var/interlink/podman"
+  ImagePrefix: "docker.io/"
+  VerboseLogging: false
+  ErrorsOnlyLogging: false
+  Namespace: "default"
+  CommandPrefix: ""
+  ExportPodData: true
+  EnableProbes: false
+  UsePods: true
+  NetworkMode: "bridge"
+
+# ============================================================================
 # ENVIRONMENT VARIABLES (for backward compatibility)
 # ============================================================================
 # You can also set these environment variables:
