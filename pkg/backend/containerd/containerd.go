@@ -56,7 +56,7 @@ func NewContainerdBackend(ctx context.Context, config *ContainerdConfig) (*Conta
 func (c *ContainerdBackend) Submit(ctx context.Context, podData *commonIL.RetrievedPodData) (string, error) {
 	pod := podData.Pod
 	ctx = namespaces.WithNamespace(ctx, c.Config.Namespace)
-	
+
 	filesPath := filepath.Join(c.Config.DataRootFolder, pod.Namespace+"-"+string(pod.UID))
 
 	// Create working directory
@@ -83,11 +83,11 @@ func (c *ContainerdBackend) Submit(ctx context.Context, podData *commonIL.Retrie
 		jobInfo.JobID = containerID
 		jobInfo.ContainerIDs["jobscript"] = containerID
 		c.Jobs[string(pod.UID)] = jobInfo
-		
+
 		if err := c.saveJobMetadata(jobInfo); err != nil {
 			log.G(ctx).Warning("Failed to save job metadata: ", err)
 		}
-		
+
 		return containerID, nil
 	}
 
@@ -118,7 +118,7 @@ func (c *ContainerdBackend) Submit(ctx context.Context, podData *commonIL.Retrie
 			return "", fmt.Errorf("failed to run container %s: %w", container.Name, err)
 		}
 		jobInfo.ContainerIDs[container.Name] = containerID
-		
+
 		// Set primary job ID to first regular container
 		if jobInfo.JobID == "" {
 			jobInfo.JobID = containerID
@@ -154,7 +154,7 @@ func (c *ContainerdBackend) executeJobScript(ctx context.Context, pod *v1.Pod, s
 	}
 
 	containerID := fmt.Sprintf("interlink-%s-jobscript", string(pod.UID))
-	
+
 	// Create container with the script
 	container, err := c.Client.NewContainer(
 		ctx,
@@ -196,7 +196,7 @@ func (c *ContainerdBackend) Status(ctx context.Context, pods []*v1.Pod) ([]commo
 	for _, pod := range pods {
 		podUID := string(pod.UID)
 		jobInfo, exists := c.Jobs[podUID]
-		
+
 		if !exists {
 			statuses = append(statuses, commonIL.PodStatus{
 				PodName:      pod.Name,
@@ -276,7 +276,7 @@ func (c *ContainerdBackend) GetLogs(ctx context.Context, podUID, containerName s
 // SystemInfo implements the BatchSystem interface for Containerd
 func (c *ContainerdBackend) SystemInfo(ctx context.Context) (string, error) {
 	ctx = namespaces.WithNamespace(ctx, c.Config.Namespace)
-	
+
 	version, err := c.Client.Version(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get Containerd version: %w", err)
@@ -326,7 +326,7 @@ func (c *ContainerdBackend) CreateDirectories() error {
 // LoadJobs implements the BatchSystem interface for Containerd
 func (c *ContainerdBackend) LoadJobs() error {
 	metadataDir := filepath.Join(c.Config.DataRootFolder, ".metadata")
-	
+
 	if _, err := os.Stat(metadataDir); os.IsNotExist(err) {
 		return nil
 	}

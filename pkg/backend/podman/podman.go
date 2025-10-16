@@ -82,7 +82,7 @@ func (p *PodmanBackend) ping(ctx context.Context) error {
 		return err
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("ping failed with status: %d", resp.StatusCode)
 	}
@@ -130,11 +130,11 @@ func (p *PodmanBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 		}
 		jobInfo.ContainerIDs["jobscript"] = containerID
 		p.Jobs[string(pod.UID)] = jobInfo
-		
+
 		if err := p.saveJobMetadata(jobInfo); err != nil {
 			log.G(ctx).Warning("Failed to save job metadata: ", err)
 		}
-		
+
 		return jobInfo.JobID, nil
 	}
 
@@ -164,7 +164,7 @@ func (p *PodmanBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 			return "", fmt.Errorf("failed to run container %s: %w", container.Name, err)
 		}
 		jobInfo.ContainerIDs[container.Name] = containerID
-		
+
 		if !p.Config.UsePods && jobInfo.JobID == "" {
 			jobInfo.JobID = containerID
 		}
@@ -188,7 +188,7 @@ func (p *PodmanBackend) Status(ctx context.Context, pods []*v1.Pod) ([]commonIL.
 	for _, pod := range pods {
 		podUID := string(pod.UID)
 		jobInfo, exists := p.Jobs[podUID]
-		
+
 		if !exists {
 			statuses = append(statuses, commonIL.PodStatus{
 				PodName:      pod.Name,
@@ -339,7 +339,7 @@ func (p *PodmanBackend) CreateDirectories() error {
 // LoadJobs implements the BatchSystem interface for Podman
 func (p *PodmanBackend) LoadJobs() error {
 	metadataDir := filepath.Join(p.Config.DataRootFolder, ".metadata")
-	
+
 	if _, err := os.Stat(metadataDir); os.IsNotExist(err) {
 		return nil
 	}

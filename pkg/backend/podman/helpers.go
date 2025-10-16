@@ -61,15 +61,15 @@ func (p *PodmanBackend) executeJobScript(ctx context.Context, pod *v1.Pod, scrip
 	}
 
 	image := p.prepareImage("bash:latest")
-	
+
 	// Pull image if needed
 	if err := p.pullImageIfNeeded(ctx, image); err != nil {
 		log.G(ctx).Warning("Failed to pull image: ", err)
 	}
 
 	containerCreate := map[string]interface{}{
-		"image":   image,
-		"command": []string{"bash", "/job/jobScript.sh"},
+		"image":    image,
+		"command":  []string{"bash", "/job/jobScript.sh"},
 		"work_dir": "/job",
 		"labels": map[string]string{
 			"interlink.pod.uid":       string(pod.UID),
@@ -130,7 +130,7 @@ func (p *PodmanBackend) executeJobScript(ctx context.Context, pod *v1.Pod, scrip
 // runContainer creates and starts a Podman container for a Kubernetes container spec
 func (p *PodmanBackend) runContainer(ctx context.Context, pod *v1.Pod, container *v1.Container, filesPath string, isInit bool, podmanPodID string) (string, error) {
 	image := p.prepareImage(container.Image)
-	
+
 	// Pull image if needed
 	if err := p.pullImageIfNeeded(ctx, image); err != nil {
 		log.G(ctx).Warning("Failed to pull image: ", err)
@@ -138,8 +138,8 @@ func (p *PodmanBackend) runContainer(ctx context.Context, pod *v1.Pod, container
 
 	// Prepare container creation request
 	containerCreate := map[string]interface{}{
-		"image":   image,
-		"env":     p.prepareEnvVars(container),
+		"image": image,
+		"env":   p.prepareEnvVars(container),
 		"labels": map[string]string{
 			"interlink.pod.uid":       string(pod.UID),
 			"interlink.pod.name":      pod.Name,
@@ -268,7 +268,7 @@ func (p *PodmanBackend) getContainerStatus(ctx context.Context, containerID, con
 		// Container has terminated
 		startedAt, _ := time.Parse(time.RFC3339Nano, inspect.State.StartedAt)
 		finishedAt, _ := time.Parse(time.RFC3339Nano, inspect.State.FinishedAt)
-		
+
 		if jobInfo.EndTime.IsZero() && !finishedAt.IsZero() {
 			jobInfo.EndTime = finishedAt
 			p.saveJobMetadata(jobInfo)
@@ -322,7 +322,7 @@ func (p *PodmanBackend) waitForContainer(ctx context.Context, containerID string
 // cleanup stops and removes all containers for a job
 func (p *PodmanBackend) cleanup(ctx context.Context, jobInfo *JobInfo) error {
 	var errors []string
-	
+
 	// Stop and remove containers
 	for containerName, containerID := range jobInfo.ContainerIDs {
 		// Stop container
@@ -351,20 +351,20 @@ func (p *PodmanBackend) cleanup(ctx context.Context, jobInfo *JobInfo) error {
 			podResp.Body.Close()
 		}
 	}
-	
+
 	// Remove from jobs map
 	delete(p.Jobs, jobInfo.PodUID)
-	
+
 	// Remove metadata file
 	metadataPath := filepath.Join(p.Config.DataRootFolder, ".metadata", jobInfo.PodUID+".json")
 	if err := os.Remove(metadataPath); err != nil && !os.IsNotExist(err) {
 		log.G(ctx).Warning("Failed to remove metadata file: ", err)
 	}
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("cleanup errors: %s", strings.Join(errors, "; "))
 	}
-	
+
 	return nil
 }
 
@@ -388,7 +388,7 @@ func (p *PodmanBackend) prepareEnvVars(container *v1.Container) []string {
 // prepareMounts converts Kubernetes volume mounts to Podman mounts
 func (p *PodmanBackend) prepareMounts(pod *v1.Pod, container *v1.Container, filesPath string) []map[string]interface{} {
 	var mounts []map[string]interface{}
-	
+
 	for _, volumeMount := range container.VolumeMounts {
 		var volume *v1.Volume
 		for i := range pod.Spec.Volumes {
@@ -397,14 +397,14 @@ func (p *PodmanBackend) prepareMounts(pod *v1.Pod, container *v1.Container, file
 				break
 			}
 		}
-		
+
 		if volume == nil {
 			log.G(p.Ctx).Warning("Volume not found: ", volumeMount.Name)
 			continue
 		}
-		
+
 		readOnly := volumeMount.ReadOnly
-		
+
 		if volume.HostPath != nil {
 			mounts = append(mounts, map[string]interface{}{
 				"type":        "bind",
@@ -423,7 +423,7 @@ func (p *PodmanBackend) prepareMounts(pod *v1.Pod, container *v1.Container, file
 			})
 		}
 	}
-	
+
 	return mounts
 }
 
@@ -462,17 +462,17 @@ func (p *PodmanBackend) saveJobMetadata(jobInfo *JobInfo) error {
 	if err := os.MkdirAll(metadataDir, 0755); err != nil {
 		return fmt.Errorf("failed to create metadata directory: %w", err)
 	}
-	
+
 	data, err := json.MarshalIndent(jobInfo, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal job metadata: %w", err)
 	}
-	
+
 	metadataPath := filepath.Join(metadataDir, jobInfo.PodUID+".json")
 	if err := os.WriteFile(metadataPath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write job metadata: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -487,7 +487,7 @@ func (p *PodmanBackend) pullImageIfNeeded(ctx context.Context, image string) err
 			return nil
 		}
 	}
-	
+
 	// Pull image
 	log.G(ctx).Info("Pulling image: ", image)
 	pullResp, err := p.doRequest(ctx, "POST", fmt.Sprintf("/v3.0.0/libpod/images/pull?reference=%s", image), nil)
@@ -495,10 +495,10 @@ func (p *PodmanBackend) pullImageIfNeeded(ctx context.Context, image string) err
 		return fmt.Errorf("failed to pull image: %w", err)
 	}
 	defer pullResp.Body.Close()
-	
+
 	if pullResp.StatusCode != 200 {
 		return fmt.Errorf("pull failed: status %d", pullResp.StatusCode)
 	}
-	
+
 	return nil
 }

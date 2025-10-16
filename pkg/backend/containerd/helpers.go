@@ -28,7 +28,7 @@ import (
 func (c *ContainerdBackend) runContainer(ctx context.Context, pod *v1.Pod, container *v1.Container, filesPath string, isInit bool) (string, error) {
 	ctx = namespaces.WithNamespace(ctx, c.Config.Namespace)
 	image := c.prepareImage(container.Image)
-	
+
 	// Pull image if needed
 	log.G(ctx).Debug("Ensuring image is available: ", image)
 	if err := c.pullImageIfNeeded(ctx, image); err != nil {
@@ -41,7 +41,7 @@ func (c *ContainerdBackend) runContainer(ctx context.Context, pod *v1.Pod, conta
 	}
 
 	containerID := fmt.Sprintf("interlink-%s-%s-%s", pod.Namespace, pod.Name, container.Name)
-	
+
 	// Prepare OCI spec options
 	opts := []oci.SpecOpts{
 		oci.WithImageConfig(img),
@@ -115,7 +115,7 @@ func (c *ContainerdBackend) runContainer(ctx context.Context, pod *v1.Pod, conta
 // getContainerStatus retrieves the current status of a Containerd container
 func (c *ContainerdBackend) getContainerStatus(ctx context.Context, containerID, containerName string, jobInfo *JobInfo) (v1.ContainerStatus, error) {
 	ctx = namespaces.WithNamespace(ctx, c.Config.Namespace)
-	
+
 	ctr, err := c.Client.LoadContainer(ctx, containerID)
 	if err != nil {
 		return v1.ContainerStatus{}, fmt.Errorf("failed to load container: %w", err)
@@ -207,7 +207,7 @@ func (c *ContainerdBackend) getContainerStatus(ctx context.Context, containerID,
 // waitForContainer waits for a container to finish (used for init containers)
 func (c *ContainerdBackend) waitForContainer(ctx context.Context, containerID string) error {
 	ctx = namespaces.WithNamespace(ctx, c.Config.Namespace)
-	
+
 	ctr, err := c.Client.LoadContainer(ctx, containerID)
 	if err != nil {
 		return fmt.Errorf("failed to load container: %w", err)
@@ -239,7 +239,7 @@ func (c *ContainerdBackend) waitForContainer(ctx context.Context, containerID st
 func (c *ContainerdBackend) cleanup(ctx context.Context, jobInfo *JobInfo) error {
 	ctx = namespaces.WithNamespace(ctx, c.Config.Namespace)
 	var errors []string
-	
+
 	for containerName, containerID := range jobInfo.ContainerIDs {
 		ctr, err := c.Client.LoadContainer(ctx, containerID)
 		if err != nil {
@@ -281,20 +281,20 @@ func (c *ContainerdBackend) cleanup(ctx context.Context, jobInfo *JobInfo) error
 			}
 		}
 	}
-	
+
 	// Remove from jobs map
 	delete(c.Jobs, jobInfo.PodUID)
-	
+
 	// Remove metadata file
 	metadataPath := filepath.Join(c.Config.DataRootFolder, ".metadata", jobInfo.PodUID+".json")
 	if err := os.Remove(metadataPath); err != nil && !os.IsNotExist(err) {
 		log.G(ctx).Warning("Failed to remove metadata file: ", err)
 	}
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("cleanup errors: %s", strings.Join(errors, "; "))
 	}
-	
+
 	return nil
 }
 
@@ -318,7 +318,7 @@ func (c *ContainerdBackend) prepareEnvVars(container *v1.Container) []string {
 // prepareMounts converts Kubernetes volume mounts to OCI mounts
 func (c *ContainerdBackend) prepareMounts(pod *v1.Pod, container *v1.Container, filesPath string) []specs.Mount {
 	var mounts []specs.Mount
-	
+
 	for _, volumeMount := range container.VolumeMounts {
 		var volume *v1.Volume
 		for i := range pod.Spec.Volumes {
@@ -327,19 +327,19 @@ func (c *ContainerdBackend) prepareMounts(pod *v1.Pod, container *v1.Container, 
 				break
 			}
 		}
-		
+
 		if volume == nil {
 			log.G(c.Ctx).Warning("Volume not found: ", volumeMount.Name)
 			continue
 		}
-		
+
 		var options []string
 		if volumeMount.ReadOnly {
 			options = []string{"ro", "rbind"}
 		} else {
 			options = []string{"rw", "rbind"}
 		}
-		
+
 		if volume.HostPath != nil {
 			mounts = append(mounts, specs.Mount{
 				Destination: volumeMount.MountPath,
@@ -358,7 +358,7 @@ func (c *ContainerdBackend) prepareMounts(pod *v1.Pod, container *v1.Container, 
 			})
 		}
 	}
-	
+
 	return mounts
 }
 
@@ -398,36 +398,36 @@ func (c *ContainerdBackend) saveJobMetadata(jobInfo *JobInfo) error {
 	if err := os.MkdirAll(metadataDir, 0755); err != nil {
 		return fmt.Errorf("failed to create metadata directory: %w", err)
 	}
-	
+
 	data, err := json.MarshalIndent(jobInfo, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal job metadata: %w", err)
 	}
-	
+
 	metadataPath := filepath.Join(metadataDir, jobInfo.PodUID+".json")
 	if err := os.WriteFile(metadataPath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write job metadata: %w", err)
 	}
-	
+
 	return nil
 }
 
 // pullImageIfNeeded pulls a container image if it's not already present
 func (c *ContainerdBackend) pullImageIfNeeded(ctx context.Context, image string) error {
 	ctx = namespaces.WithNamespace(ctx, c.Config.Namespace)
-	
+
 	// Check if image exists locally
 	_, err := c.Client.GetImage(ctx, image)
 	if err == nil {
 		return nil
 	}
-	
+
 	// Image doesn't exist, pull it
 	log.G(ctx).Info("Pulling image: ", image)
 	_, err = c.Client.Pull(ctx, image, containerd.WithPullUnpack)
 	if err != nil {
 		return fmt.Errorf("failed to pull image: %w", err)
 	}
-	
+
 	return nil
 }

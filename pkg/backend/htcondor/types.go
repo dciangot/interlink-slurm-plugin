@@ -99,13 +99,13 @@ const (
 
 // HTCondorJob represents a job's information from condor_q or condor_history
 type HTCondorJob struct {
-	ClusterID  string
-	ProcID     string
-	JobID      string // ClusterID.ProcID
-	Status     HTCondorJobState
-	ExitCode   int
-	RemoteHost string
-	StartTime  time.Time
+	ClusterID      string
+	ProcID         string
+	JobID          string // ClusterID.ProcID
+	Status         HTCondorJobState
+	ExitCode       int
+	RemoteHost     string
+	StartTime      time.Time
 	CompletionTime time.Time
 }
 

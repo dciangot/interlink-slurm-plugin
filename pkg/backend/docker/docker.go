@@ -80,12 +80,12 @@ func (d *DockerBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 		jobInfo.JobID = containerID
 		jobInfo.ContainerIDs["jobscript"] = containerID
 		d.Jobs[string(pod.UID)] = jobInfo
-		
+
 		// Save job metadata
 		if err := d.saveJobMetadata(jobInfo); err != nil {
 			log.G(ctx).Warning("Failed to save job metadata: ", err)
 		}
-		
+
 		return containerID, nil
 	}
 
@@ -116,7 +116,7 @@ func (d *DockerBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 			return "", fmt.Errorf("failed to run container %s: %w", container.Name, err)
 		}
 		jobInfo.ContainerIDs[container.Name] = containerID
-		
+
 		// Set primary job ID to first regular container
 		if jobInfo.JobID == "" {
 			jobInfo.JobID = containerID
@@ -186,7 +186,7 @@ func (d *DockerBackend) Status(ctx context.Context, pods []*v1.Pod) ([]commonIL.
 	for _, pod := range pods {
 		podUID := string(pod.UID)
 		jobInfo, exists := d.Jobs[podUID]
-		
+
 		if !exists {
 			// Pod not found, return empty status
 			statuses = append(statuses, commonIL.PodStatus{
@@ -306,7 +306,7 @@ func (d *DockerBackend) CreateDirectories() error {
 // LoadJobs implements the BatchSystem interface for Docker
 func (d *DockerBackend) LoadJobs() error {
 	metadataDir := filepath.Join(d.Config.DataRootFolder, ".metadata")
-	
+
 	if _, err := os.Stat(metadataDir); os.IsNotExist(err) {
 		return nil // No metadata to load
 	}
