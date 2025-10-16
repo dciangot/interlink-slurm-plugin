@@ -260,9 +260,10 @@ func (p *PodmanBackend) Cancel(ctx context.Context, podUID string) error {
 		return fmt.Errorf("job not found for pod UID: %s", podUID)
 	}
 
-	return if err := p.cleanup(ctx, jobInfo); err != nil {
- 	log.G(ctx).Warn("Failed to cleanup job: ", err)
- }
+	if err := p.cleanup(ctx, jobInfo); err != nil {
+		log.G(ctx).Warn("Failed to cleanup job: ", err)
+	}
+	return nil
 }
 
 // GetLogs implements the BatchSystem interface for Podman
