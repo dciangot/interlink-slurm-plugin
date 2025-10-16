@@ -171,6 +171,12 @@ func main() {
 	case config.BackendTypeDocker:
 		verboseLogging = cfg.Docker.VerboseLogging
 		errorsOnlyLogging = cfg.Docker.ErrorsOnlyLogging
+	case config.BackendTypeContainerd:
+		verboseLogging = cfg.Containerd.VerboseLogging
+		errorsOnlyLogging = cfg.Containerd.ErrorsOnlyLogging
+	case config.BackendTypePodman:
+		verboseLogging = cfg.Podman.VerboseLogging
+		errorsOnlyLogging = cfg.Podman.ErrorsOnlyLogging
 	}
 
 	if verboseLogging {
