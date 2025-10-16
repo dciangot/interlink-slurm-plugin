@@ -15,6 +15,6 @@ func initDockerBackend(ctx context.Context, cfg *config.UnifiedConfig) (backend.
 	return nil, fmt.Errorf("Docker backend not compiled in this build")
 }
 
-func getDockerLogging(cfg *config.UnifiedConfig) (verboseLogging, errorsOnlyLogging bool) {
+func getDockerLogging(_ *config.UnifiedConfig) (verboseLogging, errorsOnlyLogging bool) {
 	return false, false
 }
