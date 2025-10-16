@@ -1,3 +1,6 @@
+//go:build containerd
+// +build containerd
+
 package containerd
 
 import (
