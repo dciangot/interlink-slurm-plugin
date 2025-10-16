@@ -277,7 +277,7 @@ func getRetrievedConfigMap(retrievedContainer *commonIL.RetrievedContainer, conf
 			return &configMap, nil
 		}
 	}
-	return nil, fmt.Errorf("could not find configMap %s in container %s in pod %s", configMapName, containerName, podName)
+	return nil, fmt.Errorf("could not find configMap %s in pod %s", configMapName, podName)
 }
 
 func getRetrievedProjectedVolumeMap(retrievedContainer *commonIL.RetrievedContainer, projectedVolumeMapName string, _ string, podName string) (*v1.ConfigMap, error) {
