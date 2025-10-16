@@ -140,9 +140,14 @@ func (c *ContainerdBackend) executeJobScript(ctx context.Context, pod *v1.Pod, s
 		return "", fmt.Errorf("failed to write job script: %w", err)
 	}
 
-	image := c.prepareImage("bash:latest")
-	if err := c.pullImageIfNeeded(ctx, image); err != nil {
+	imageName := c.prepareImage("bash:latest")
+	if err := c.pullImageIfNeeded(ctx, imageName); err != nil {
 		log.G(ctx).Warning("Failed to pull image: ", err)
+	}
+
+	img, err := c.Client.GetImage(ctx, imageName)
+	if err != nil {
+		return "", fmt.Errorf("failed to get image: %w", err)
 	}
 
 	containerID := fmt.Sprintf("interlink-%s-jobscript", string(pod.UID))
@@ -151,10 +156,10 @@ func (c *ContainerdBackend) executeJobScript(ctx context.Context, pod *v1.Pod, s
 	container, err := c.Client.NewContainer(
 		ctx,
 		containerID,
-		containerd.WithImage(image),
-		containerd.WithNewSnapshot(containerID+"-snapshot", image),
+		containerd.WithImage(img),
+		containerd.WithNewSnapshot(containerID+"-snapshot", img),
 		containerd.WithNewSpec(
-			oci.WithImageConfig(image),
+			oci.WithImageConfig(img),
 			oci.WithProcessArgs("bash", "/job/jobScript.sh"),
 			oci.WithEnv([]string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}),
 		),
