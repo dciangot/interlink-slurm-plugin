@@ -982,7 +982,7 @@ func SLURMBatchSubmit(Ctx context.Context, config SlurmConfig, path string) (str
 	} else {
 		log.G(Ctx).Debug("Job submitted")
 	}
-	return string(execReturn.Stdout), nil
+	return execReturn.Stdout, nil
 }
 
 // handleJidAndPodUid creates a JID file to store the Job ID of the submitted job.
@@ -1141,7 +1141,7 @@ func mountDataSimpleVolume(
 		volumesHostToContainerPaths = append(volumesHostToContainerPaths, bind)
 
 		if os.Getenv("SHARED_FS") != "true" {
-			currentEnvVarName := string(container.Name) + "_" + volumeType + "_" + hexString
+			currentEnvVarName := container.Name + "_" + volumeType + "_" + hexString
 			log.G(Ctx).Debug("---- Setting env " + currentEnvVarName + " to mount the file later")
 			err = os.Setenv(currentEnvVarName, string(mountDataFiles[key]))
 			if err != nil {
