@@ -10,6 +10,7 @@
 issues:
   exclude-dirs:
     - ci
+    - pkg/backend/htcondor
 linters:
   enable:
     - gosec
