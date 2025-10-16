@@ -254,6 +254,9 @@ func (p *PodmanBackend) getContainerStatus(ctx context.Context, containerID, con
 	// Map Podman state to Kubernetes state
 	if inspect.State.Running {
 		startedAt, err := time.Parse(time.RFC3339Nano, inspect.State.StartedAt)
+		if err != nil {
+			startedAt = time.Time{}
+		}
 		status.State = v1.ContainerState{
 			Running: &v1.ContainerStateRunning{
 				StartedAt: metav1.Time{Time: startedAt},
