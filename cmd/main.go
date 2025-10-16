@@ -230,6 +230,22 @@ func main() {
 		}
 		batchSystem = dockerBackend
 
+	case config.BackendTypeContainerd:
+		log.G(ctx).Info("Initializing Containerd backend")
+		containerdBackend, err := containerd.NewContainerdBackend(ctx, cfg.Containerd)
+		if err != nil {
+			log.G(ctx).Fatal("Failed to initialize Containerd backend: ", err)
+		}
+		batchSystem = containerdBackend
+
+	case config.BackendTypePodman:
+		log.G(ctx).Info("Initializing Podman backend")
+		podmanBackend, err := podman.NewPodmanBackend(ctx, cfg.Podman)
+		if err != nil {
+			log.G(ctx).Fatal("Failed to initialize Podman backend: ", err)
+		}
+		batchSystem = podmanBackend
+
 	default:
 		log.G(ctx).Fatal("Unknown backend type: ", cfg.BackendType)
 	}
