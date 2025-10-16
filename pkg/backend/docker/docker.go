@@ -106,7 +106,7 @@ func (d *DockerBackend) Submit(ctx context.Context, podData *commonIL.RetrievedP
 
 	// Process regular containers
 	for _, container := range pod.Spec.Containers {
-		containerID, err := d.runContainer(ctx, pod, &container, filesPath, false)
+		containerID, err := d.runContainer(ctx, &pod, &container, filesPath, false)
 		if err != nil {
 			d.cleanup(ctx, jobInfo)
 			os.RemoveAll(filesPath)
