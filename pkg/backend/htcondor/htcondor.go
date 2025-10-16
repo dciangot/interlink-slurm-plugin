@@ -1,4 +1,4 @@
--e //go:build htcondor
+//go:build htcondor
 // +build htcondor
 
 package htcondor
