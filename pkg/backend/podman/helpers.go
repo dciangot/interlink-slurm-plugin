@@ -201,7 +201,7 @@ func (p *PodmanBackend) runContainer(ctx context.Context, pod *v1.Pod, container
 	if resp.StatusCode != 201 {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read response body: %w", err)
+			return "", fmt.Errorf("failed to read response body: %w", err)
 		}
 		return "", fmt.Errorf("failed to create container: status %d, body: %s", resp.StatusCode, string(bodyBytes))
 	}
