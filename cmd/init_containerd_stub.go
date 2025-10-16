@@ -15,6 +15,6 @@ func initContainerdBackend(ctx context.Context, cfg *config.UnifiedConfig) (back
 	return nil, fmt.Errorf("Containerd backend not compiled in this build")
 }
 
-func getContainerdLogging(cfg *config.UnifiedConfig) (verboseLogging, errorsOnlyLogging bool) {
+func getContainerdLogging(_ *config.UnifiedConfig) (verboseLogging, errorsOnlyLogging bool) {
 	return false, false
 }
