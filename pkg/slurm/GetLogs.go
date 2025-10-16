@@ -122,7 +122,7 @@ func (h *SidecarHandler) GetLogsFollowMode(
 					break
 				}
 				// Checking if container is dead (meaning the job ID is not in context anymore, OR if the status file exist).
-				if !checkIfJidExists(spanCtx, (h.JIDs), podUid) {
+				if !checkIfJidExists(spanCtx, (h.JIDs), podUID) {
 					// The JID disappeared, so the container is dead, probably from a POD delete request. Trying to get the latest log one last time.
 					// Because the moment we found this, there might be some more logs to read.
 					isContainerDead = true
