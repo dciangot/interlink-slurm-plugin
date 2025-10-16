@@ -1,0 +1,150 @@
+# Example InterLink Configuration for HTCondor Backend
+# This configuration enables the InterLink SLURM plugin to work with HTCondor batch system
+# using Singularity/Apptainer as the container runtime.
+
+# Backend type - must be "htcondor" to use the HTCondor backend
+BackendType: htcondor
+
+# HTCondor-specific configuration
+HTCondor:
+  # Path to condor_submit command
+  # Default: /usr/bin/condor_submit
+  CondorSubmitPath: "/usr/bin/condor_submit"
+
+  # Path to condor_q command (for querying job status)
+  # Default: /usr/bin/condor_q
+  CondorQPath: "/usr/bin/condor_q"
+
+  # Path to condor_rm command (for removing jobs)
+  # Default: /usr/bin/condor_rm
+  CondorRmPath: "/usr/bin/condor_rm"
+
+  # Path to condor_history command (for querying completed jobs)
+  # Default: /usr/bin/condor_history
+  CondorHistoryPath: "/usr/bin/condor_history"
+
+  # Path to Singularity/Apptainer executable
+  # Default: /usr/bin/singularity
+  SingularityPath: "/usr/bin/singularity"
+
+  # Default Singularity options applied to all containers
+  # Common options:
+  #   --cleanenv: Clean environment before running container
+  #   --containall: Contain all filesystems (no automatic bind mounts)
+  #   --writable-tmpfs: Make /tmp writable inside container
+  SingularityOptions:
+    - "--cleanenv"
+    - "--containall"
+
+  # Spool directory for staging ConfigMaps, Secrets, and job files
+  # This directory is on the submit node and is used to create tar.gz archives
+  # that are transferred to execute nodes via HTCondor's file transfer mechanism.
+  # Default: /var/interlink/htcondor/spool
+  SpoolDirectory: "/var/interlink/htcondor/spool"
+
+  # Data root folder for storing job metadata and logs
+  # Default: /var/interlink/htcondor
+  DataRootFolder: "/var/interlink/htcondor"
+
+  # HTCondor requirements expression (ClassAd)
+  # This can be used to specify job placement requirements
+  # Example: "OpSysMajorVer == 8 && Arch == \"X86_64\""
+  # Default: "" (no requirements)
+  Requirements: ""
+
+  # Log streaming is always disabled for HTCondor backend
+  # This is because HTCondor typically does not use a shared filesystem
+  # between the submit node and execute nodes. Logs are only available
+  # after job completion when output files are transferred back.
+  # This setting is automatically set to false and cannot be changed.
+  EnableLogStreaming: false
+
+  # Verbose logging (debug level)
+  # Default: false
+  VerboseLogging: false
+
+  # Errors only logging (only log errors, suppress info and warnings)
+  # Default: false
+  ErrorsOnlyLogging: false
+
+# Important Notes for HTCondor Backend:
+#
+# 1. Volume Support:
+#    - HostPath: Directly bind mounted from execute node (path must be accessible on execute nodes)
+#    - ConfigMap: Transferred as tar.gz archive via HTCondor file transfer, extracted on execute node
+#    - Secret: Transferred as tar.gz archive via HTCondor file transfer, extracted on execute node
+#    - EmptyDir: Created locally in _condor_scratch_dir on execute node
+#    - PersistentVolumeClaim, NFS, CSI: NOT SUPPORTED
+#
+# 2. No Shared Filesystem:
+#    This configuration assumes NO shared filesystem between the submit node (where this plugin runs)
+#    and the execute nodes (where containers run). All data transfer happens via HTCondor's built-in
+#    file transfer mechanism.
+#
+# 3. Log Streaming:
+#    Real-time log streaming is disabled because logs are not accessible until the job completes
+#    and output files are transferred back to the submit node.
+#
+# 4. Init Containers:
+#    Init containers are submitted sequentially - each init container must complete before the next
+#    one starts. Regular containers are submitted in parallel after all init containers complete.
+#
+# 5. Container Images:
+#    - Singularity/Apptainer SIF files: Provide the full path (e.g., /path/to/image.sif)
+#    - Docker images: Use docker:// prefix (e.g., docker://ubuntu:20.04)
+#    - Images must be accessible on execute nodes (either local SIF files or pulled from registry)
+#
+# 6. Pod Annotations:
+#    You can customize HTCondor job submission using pod annotations:
+#    - htcondor.interlink.io/classads: Custom ClassAd attributes to add to the submit file
+#
+#    Example:
+#      annotations:
+#        htcondor.interlink.io/classads: |
+#          +ProjectName = "MyProject"
+#          +Group = "physics"
+#          request_gpus = 1
+#
+# 7. Resource Limits:
+#    CPU and memory limits from the pod spec are translated to HTCondor resource requests:
+#    - resources.limits.cpu -> request_cpus
+#    - resources.limits.memory -> request_memory
+#
+# 8. Environment Variables:
+#    Environment variables from the container spec are passed to Singularity using --env flags
+#    and are also exported in the wrapper script.
+#
+# Example Pod Specification:
+#
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: htcondor-test
+#   annotations:
+#     htcondor.interlink.io/classads: |
+#       +ProjectName = "TestProject"
+# spec:
+#   containers:
+#   - name: main
+#     image: docker://ubuntu:20.04
+#     command: ["/bin/bash", "-c"]
+#     args: ["echo Hello from HTCondor && sleep 60"]
+#     resources:
+#       limits:
+#         cpu: "2"
+#         memory: "4Gi"
+#     env:
+#     - name: MY_VAR
+#       value: "test"
+#     volumeMounts:
+#     - name: data
+#       mountPath: /data
+#     - name: config
+#       mountPath: /config
+#   volumes:
+#   - name: data
+#     hostPath:
+#       path: /shared/data
+#   - name: config
+#     configMap:
+#       name: my-config
