@@ -65,7 +65,7 @@ func NewHTCondorBackend(ctx context.Context, config *HTCondorConfig) (*HTCondorB
 // Submit implements the BatchSystem interface for HTCondor
 func (h *HTCondorBackend) Submit(ctx context.Context, podData *commonIL.RetrievedPodData) (string, error) {
 	pod := podData.Pod
-	
+
 	log.G(ctx).Info("HTCondor: Submitting pod ", pod.Name, " in namespace ", pod.Namespace)
 
 	// 1. Create spool directory for this pod
@@ -102,7 +102,7 @@ func (h *HTCondorBackend) Submit(ctx context.Context, podData *commonIL.Retrieve
 	// 5. Handle init containers (sequential execution)
 	for _, initContainer := range pod.Spec.InitContainers {
 		log.G(ctx).Info("HTCondor: Submitting init container: ", initContainer.Name)
-		
+
 		jobID, submitFile, err := h.submitContainer(ctx, pod, &initContainer, spoolDir, true)
 		if err != nil {
 			h.cleanup(ctx, jobInfo)
@@ -124,7 +124,7 @@ func (h *HTCondorBackend) Submit(ctx context.Context, podData *commonIL.Retrieve
 	var primaryJobID string
 	for _, container := range pod.Spec.Containers {
 		log.G(ctx).Info("HTCondor: Submitting container: ", container.Name)
-		
+
 		jobID, submitFile, err := h.submitContainer(ctx, pod, &container, spoolDir, false)
 		if err != nil {
 			h.cleanup(ctx, jobInfo)
@@ -160,7 +160,7 @@ func (h *HTCondorBackend) Status(ctx context.Context, pods []*v1.Pod) ([]commonI
 	for _, pod := range pods {
 		podUID := string(pod.UID)
 		jobInfo, exists := h.Jobs[podUID]
-		
+
 		if !exists {
 			// Pod not tracked
 			statuses = append(statuses, commonIL.PodStatus{
@@ -247,7 +247,7 @@ func (h *HTCondorBackend) GetLogs(ctx context.Context, podUID, containerName str
 	// Check if job is completed
 	job, err := h.queryJob(ctx, jobID)
 	if err != nil || job.Status != JobStateCompleted {
-		return nil, fmt.Errorf("logs not yet available: job %s is not completed (status: %s)", 
+		return nil, fmt.Errorf("logs not yet available: job %s is not completed (status: %s)",
 			jobID, job.Status.String())
 	}
 
@@ -284,7 +284,7 @@ func (h *HTCondorBackend) CreateDirectories() error {
 		return fmt.Errorf("failed to create submit file directory: %w", err)
 	}
 
-	log.G(h.Ctx).Info("Created HTCondor directories: spool=", h.Config.SpoolDirectory, 
+	log.G(h.Ctx).Info("Created HTCondor directories: spool=", h.Config.SpoolDirectory,
 		" submit=", h.Config.SubmitFileDir)
 	return nil
 }
@@ -292,7 +292,7 @@ func (h *HTCondorBackend) CreateDirectories() error {
 // LoadJobs implements the BatchSystem interface for HTCondor
 func (h *HTCondorBackend) LoadJobs() error {
 	metadataDir := filepath.Join(h.Config.SpoolDirectory, ".metadata")
-	
+
 	if _, err := os.Stat(metadataDir); os.IsNotExist(err) {
 		return nil
 	}

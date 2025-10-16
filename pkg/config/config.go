@@ -14,11 +14,11 @@ import (
 type BackendType string
 
 const (
-	BackendTypeSLURM       BackendType = "slurm"
-	BackendTypeDocker      BackendType = "docker"
-	BackendTypeContainerd  BackendType = "containerd"
-	BackendTypePodman      BackendType = "podman"
-	BackendTypeHTCondor    BackendType = "htcondor"
+	BackendTypeSLURM      BackendType = "slurm"
+	BackendTypeDocker     BackendType = "docker"
+	BackendTypeContainerd BackendType = "containerd"
+	BackendTypePodman     BackendType = "podman"
+	BackendTypeHTCondor   BackendType = "htcondor"
 )
 
 // UnifiedConfig holds configuration for any backend type
@@ -93,32 +93,9 @@ func LoadConfig() (*UnifiedConfig, error) {
 		if config.Docker == nil {
 			return nil, fmt.Errorf("Docker backend selected but no Docker configuration provided")
 		}
-		// Set defaults for Docker config
-		if config.Docker.DataRootFolder == "" {
-			config.Docker.DataRootFolder = "/var/interlink"
-		}
-		if config.Docker.Endpoint == "" {
-			config.Docker.Endpoint = "unix:///var/run/docker.sock"
-		}
 	case BackendTypeContainerd:
 		if config.Containerd == nil {
 			return nil, fmt.Errorf("Containerd backend selected but no Containerd configuration provided")
-		}
-		// Set defaults for Containerd config
-		if config.Containerd.DataRootFolder == "" {
-			config.Containerd.DataRootFolder = "/var/interlink/containerd"
-		}
-		if config.Containerd.Socket == "" {
-			config.Containerd.Socket = "/run/containerd/containerd.sock"
-		}
-		if config.Containerd.Namespace == "" {
-			config.Containerd.Namespace = "interlink"
-		}
-		if config.Containerd.Snapshotter == "" {
-			config.Containerd.Snapshotter = "overlayfs"
-		}
-		if config.Containerd.Runtime == "" {
-			config.Containerd.Runtime = "io.containerd.runc.v2"
 		}
 	case BackendTypePodman:
 		if config.Podman == nil {
@@ -135,30 +112,6 @@ func LoadConfig() (*UnifiedConfig, error) {
 		if config.HTCondor == nil {
 			return nil, fmt.Errorf("HTCondor backend selected but no HTCondor configuration provided")
 		}
-		// Set defaults for HTCondor config
-		if config.HTCondor.CondorSubmitPath == "" {
-			config.HTCondor.CondorSubmitPath = "/usr/bin/condor_submit"
-		}
-		if config.HTCondor.CondorQPath == "" {
-			config.HTCondor.CondorQPath = "/usr/bin/condor_q"
-		}
-		if config.HTCondor.CondorRmPath == "" {
-			config.HTCondor.CondorRmPath = "/usr/bin/condor_rm"
-		}
-		if config.HTCondor.CondorHistoryPath == "" {
-			config.HTCondor.CondorHistoryPath = "/usr/bin/condor_history"
-		}
-		if config.HTCondor.SingularityPath == "" {
-			config.HTCondor.SingularityPath = "/usr/bin/singularity"
-		}
-		if config.HTCondor.SpoolDirectory == "" {
-			config.HTCondor.SpoolDirectory = "/var/interlink/htcondor/spool"
-		}
-		if config.HTCondor.DataRootFolder == "" {
-			config.HTCondor.DataRootFolder = "/var/interlink/htcondor"
-		}
-		// Log streaming is always disabled for HTCondor (no shared filesystem)
-		config.HTCondor.EnableLogStreaming = false
 	default:
 		return nil, fmt.Errorf("unknown backend type: %s (must be 'slurm', 'docker', 'containerd', 'podman', or 'htcondor')", config.BackendType)
 	}
