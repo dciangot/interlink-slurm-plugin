@@ -430,11 +430,7 @@ func (p *PodmanBackend) prepareMounts(pod *v1.Pod, container *v1.Container, file
 			})
 		} else if volume.EmptyDir != nil {
 			emptyDirPath := filepath.Join(filesPath, "emptydir", volume.Name)
-			if err := os.MkdirAll(emptyDirPath, 0755); err != nil {
-
-				log.G(ctx).Warn("Failed to create emptyDir: ", err)
-
-			}
+			_ = os.MkdirAll(emptyDirPath, 0755) // Best effort
 			mounts = append(mounts, map[string]interface{}{
 				"type":        "bind",
 				"source":      emptyDirPath,
