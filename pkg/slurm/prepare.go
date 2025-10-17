@@ -239,7 +239,7 @@ func prepareEnvs(Ctx context.Context, config SlurmConfig, podData commonIL.Retri
 	start := time.Now().UnixMicro()
 	span := trace.SpanFromContext(Ctx)
 	span.AddEvent("Preparing ENVs for container " + container.Name)
-	var envs []string = []string{}
+	var envs = []string{}
 	// For debugging purpose only
 	envs_data := []string{}
 	var err error
@@ -271,16 +271,16 @@ func getRetrievedContainer(podData *commonIL.RetrievedPodData, containerName str
 	return nil, fmt.Errorf("could not find retrieved container for %s in pod %s", containerName, podData.Pod.Name)
 }
 
-func getRetrievedConfigMap(retrievedContainer *commonIL.RetrievedContainer, configMapName string, containerName string, podName string) (*v1.ConfigMap, error) {
+func getRetrievedConfigMap(retrievedContainer *commonIL.RetrievedContainer, configMapName string, _ string, podName string) (*v1.ConfigMap, error) {
 	for _, configMap := range retrievedContainer.ConfigMaps {
 		if configMap.Name == configMapName {
 			return &configMap, nil
 		}
 	}
-	return nil, fmt.Errorf("could not find configMap %s in container %s in pod %s", configMapName, containerName, podName)
+	return nil, fmt.Errorf("could not find configMap %s in pod %s", configMapName, podName)
 }
 
-func getRetrievedProjectedVolumeMap(retrievedContainer *commonIL.RetrievedContainer, projectedVolumeMapName string, containerName string, podName string) (*v1.ConfigMap, error) {
+func getRetrievedProjectedVolumeMap(retrievedContainer *commonIL.RetrievedContainer, projectedVolumeMapName string, _ string, podName string) (*v1.ConfigMap, error) {
 	for _, retrievedProjectedVolumeMap := range retrievedContainer.ProjectedVolumeMaps {
 		if retrievedProjectedVolumeMap.Name == projectedVolumeMapName {
 			return &retrievedProjectedVolumeMap, nil
@@ -290,13 +290,13 @@ func getRetrievedProjectedVolumeMap(retrievedContainer *commonIL.RetrievedContai
 	return nil, nil
 }
 
-func getRetrievedSecret(retrievedContainer *commonIL.RetrievedContainer, secretName string, containerName string, podName string) (*v1.Secret, error) {
+func getRetrievedSecret(retrievedContainer *commonIL.RetrievedContainer, secretName string, _ string, podName string) (*v1.Secret, error) {
 	for _, retrievedSecret := range retrievedContainer.Secrets {
 		if retrievedSecret.Name == secretName {
 			return &retrievedSecret, nil
 		}
 	}
-	return nil, fmt.Errorf("could not find secret %s in container %s in pod %s", secretName, containerName, podName)
+	return nil, fmt.Errorf("could not find secret %s in pod %s", secretName, podName)
 }
 
 func getPodVolume(pod *v1.Pod, volumeName string) (*v1.Volume, error) {
@@ -878,7 +878,7 @@ highestExitCode=0
 		}
 		stringToBeWritten.WriteString(containerCommand.containerName)
 		stringToBeWritten.WriteString(" ")
-		stringToBeWritten.WriteString(strings.Join(containerCommand.runtimeCommand[:], " "))
+		stringToBeWritten.WriteString(strings.Join(containerCommand.runtimeCommand, " "))
 
 		if containerCommand.containerCommand != nil {
 			// Case the pod specified a container entrypoint array to override.
@@ -982,7 +982,7 @@ func SLURMBatchSubmit(Ctx context.Context, config SlurmConfig, path string) (str
 	} else {
 		log.G(Ctx).Debug("Job submitted")
 	}
-	return string(execReturn.Stdout), nil
+	return execReturn.Stdout, nil
 }
 
 // handleJidAndPodUid creates a JID file to store the Job ID of the submitted job.
@@ -1141,7 +1141,7 @@ func mountDataSimpleVolume(
 		volumesHostToContainerPaths = append(volumesHostToContainerPaths, bind)
 
 		if os.Getenv("SHARED_FS") != "true" {
-			currentEnvVarName := string(container.Name) + "_" + volumeType + "_" + hexString
+			currentEnvVarName := container.Name + "_" + volumeType + "_" + hexString
 			log.G(Ctx).Debug("---- Setting env " + currentEnvVarName + " to mount the file later")
 			err = os.Setenv(currentEnvVarName, string(mountDataFiles[key]))
 			if err != nil {
@@ -1359,7 +1359,7 @@ func getExitCode(ctx context.Context, path string, ctName string, exitCodeMatch 
 			}
 		}
 	}
-	exitCodeInt, err := strconv.Atoi(strings.Replace(string(exitCode), "\n", "", -1))
+	exitCodeInt, err := strconv.Atoi(strings.ReplaceAll(string(exitCode), "\n", ""))
 	if err != nil {
 		log.G(ctx).Error(err)
 		return 0, err

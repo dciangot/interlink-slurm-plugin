@@ -55,7 +55,11 @@ func NewSlurmConfig() (SlurmConfig, error) {
 			log.G(context.Background()).Error("Error opening config file, exiting...")
 			return SlurmConfig{}, err
 		}
-		yaml.Unmarshal(yfile, &SlurmConfigInst)
+		if err := yaml.Unmarshal(yfile, &SlurmConfigInst); err != nil {
+
+			log.G(context.Background()).Warn("Failed to unmarshal SLURM config: ", err)
+
+		}
 
 		if os.Getenv("SIDECARPORT") != "" {
 			SlurmConfigInst.Sidecarport = os.Getenv("SIDECARPORT")

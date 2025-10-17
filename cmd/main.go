@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -85,7 +84,7 @@ func initProvider(ctx context.Context) (func(context.Context) error, error) {
 
 		log.G(ctx).Info("CA certificate provided, setting up mutual TLS")
 
-		caCert, err := ioutil.ReadFile(caCrtFilePath)
+		caCert, err := os.ReadFile(caCrtFilePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load CA certificate: %w", err)
 		}
@@ -265,8 +264,12 @@ func main() {
 	mutex.HandleFunc("/system-info", genericHandler.SystemInfoHandler)
 
 	// Initialize backend storage and load existing jobs
-	batchSystem.CreateDirectories()
-	batchSystem.LoadJobs()
+	if err := batchSystem.CreateDirectories(); err != nil {
+		log.G(ctx).Warn("Failed to create directories: ", err)
+	}
+	if err := batchSystem.LoadJobs(); err != nil {
+		log.G(ctx).Warn("Failed to load existing jobs: ", err)
+	}
 
 	// Determine socket/port from configuration
 	var socket, sidecarPort string

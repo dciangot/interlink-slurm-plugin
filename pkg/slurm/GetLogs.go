@@ -26,9 +26,9 @@ import (
 // Logs in follow mode (get logs until the death of the container) with "kubectl -f".
 func (h *SidecarHandler) GetLogsFollowMode(
 	spanCtx context.Context,
-	podUid string,
+	podUID string,
 	w http.ResponseWriter,
-	r *http.Request,
+	_ *http.Request,
 	path string,
 	req commonIL.LogStruct,
 	containerOutputPath string,
@@ -90,7 +90,7 @@ func (h *SidecarHandler) GetLogsFollowMode(
 
 	// Looping until we get end of job.
 	// TODO: handle the Ctrl+C of kubectl logs.
-	var isContainerDead bool = false
+	var isContainerDead = false
 	for {
 		n, errRead := containerOutputReader.Read(bufferBytes)
 		if errRead != nil && errRead != io.EOF {
@@ -122,7 +122,7 @@ func (h *SidecarHandler) GetLogsFollowMode(
 					break
 				}
 				// Checking if container is dead (meaning the job ID is not in context anymore, OR if the status file exist).
-				if !checkIfJidExists(spanCtx, (h.JIDs), podUid) {
+				if !checkIfJidExists(spanCtx, (h.JIDs), podUID) {
 					// The JID disappeared, so the container is dead, probably from a POD delete request. Trying to get the latest log one last time.
 					// Because the moment we found this, there might be some more logs to read.
 					isContainerDead = true

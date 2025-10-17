@@ -82,7 +82,7 @@ func (h *SidecarHandler) SubmitHandler(w http.ResponseWriter, r *http.Request) {
 		if cpuLimitFromContainer == 0 && isDefaultCPU {
 			log.G(h.Ctx).Warning(errors.New("Max CPU resource not set for " + container.Name + ". Only 1 CPU will be used"))
 			resourceLimits.CPU = 1
-		} else {
+		} else if cond {
 			if cpuLimitFromContainer > resourceLimits.CPU && maxCPULimit < int(cpuLimitFromContainer) {
 				log.G(h.Ctx).Info("Setting CPU limit to " + strconv.FormatInt(cpuLimitFromContainer, 10))
 				cpuLimit = cpuLimitFromContainer
@@ -94,7 +94,7 @@ func (h *SidecarHandler) SubmitHandler(w http.ResponseWriter, r *http.Request) {
 		if memoryLimitFromContainer == 0 && isDefaultRam {
 			log.G(h.Ctx).Warning(errors.New("Max Memory resource not set for " + container.Name + ". Only 1MB will be used"))
 			resourceLimits.Memory = 1024 * 1024
-		} else {
+		} else if cond {
 			if memoryLimitFromContainer > resourceLimits.Memory && maxMemoryLimit < int(memoryLimitFromContainer) {
 				log.G(h.Ctx).Info("Setting Memory limit to " + strconv.FormatInt(memoryLimitFromContainer, 10))
 				memoryLimit = memoryLimitFromContainer
@@ -189,7 +189,7 @@ func (h *SidecarHandler) SubmitHandler(w http.ResponseWriter, r *http.Request) {
 			os.RemoveAll(filesPath)
 			return
 		}
-	} else {
+	} else if cond {
 
 		pathFile, err := os.Create(filesPath + "/jobScript.sh")
 		if err != nil {
@@ -197,7 +197,7 @@ func (h *SidecarHandler) SubmitHandler(w http.ResponseWriter, r *http.Request) {
 			log.G(h.Ctx).Error(err)
 			span.AddEvent("Failed to submit the SLURM Job")
 			h.handleError(spanCtx, w, http.StatusInternalServerError, err)
-			//os.RemoveAll(filesPath)
+			// os.RemoveAll(filesPath)
 			return
 		}
 
@@ -214,7 +214,7 @@ func (h *SidecarHandler) SubmitHandler(w http.ResponseWriter, r *http.Request) {
 			log.G(h.Ctx).Error(err)
 			span.AddEvent("Failed to submit the SLURM Job")
 			h.handleError(spanCtx, w, http.StatusInternalServerError, err)
-			//os.RemoveAll(filesPath)
+			// os.RemoveAll(filesPath)
 			return
 		}
 		runtime_command_pod := append([]ContainerCommand{}, ContainerCommand{
@@ -273,8 +273,8 @@ func (h *SidecarHandler) SubmitHandler(w http.ResponseWriter, r *http.Request) {
 	commonIL.SetDurationSpan(start, span, commonIL.WithHTTPReturnCode(statusCode))
 
 	if statusCode != http.StatusOK {
-		w.Write([]byte("Some errors occurred while creating containers. Check Slurm Sidecar's logs"))
-	} else {
+		_, _ = w.Write([]byte("Some errors occurred while creating containers. Check Slurm Sidecar's logs"))
+	} else if cond {
 		w.Write(returnedJIDBytes)
 	}
 }

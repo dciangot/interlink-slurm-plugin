@@ -83,7 +83,11 @@ func (h *SidecarHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 			Args:    cmd,
 			Shell:   true,
 		}
-		execReturn, _ := shell.Execute()
+		execReturn, err := shell.Execute()
+			if err != nil {
+				log.G(h.Ctx).Warn("Failed to execute shell command: ", err)
+				continue
+			}
 		execReturn.Stdout = strings.ReplaceAll(execReturn.Stdout, "\n", "")
 
 		if execReturn.Stderr != "" {
@@ -108,7 +112,11 @@ func (h *SidecarHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 					// true to be able to add prefix to squeue, but this is ugly
 					Shell: true,
 				}
-				execReturn, _ := shell.Execute()
+				execReturn, err := shell.Execute()
+			if err != nil {
+				log.G(h.Ctx).Warn("Failed to execute shell command: ", err)
+				continue
+			}
 				timeNow = time.Now()
 
 				// log.G(h.Ctx).Info("Pod: " + jid.PodUID + " | JID: " + jid.JID)
@@ -134,7 +142,7 @@ func (h *SidecarHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 							return
 						}
 
-						status, err := strconv.Atoi(strings.Replace(string(statusb), "\n", "", -1))
+						status, err := strconv.Atoi(strings.ReplaceAll(string(statusb), "\n", ""))
 						if err != nil {
 							statusCode = http.StatusInternalServerError
 							h.handleError(spanCtx, w, statusCode, fmt.Errorf(sessionContextMessage+"unable to convert container status: %s", err))
@@ -187,7 +195,7 @@ func (h *SidecarHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 								h.handleError(spanCtx, w, statusCode, err)
 								return
 							}
-							f.WriteString((*h.JIDs)[uid].EndTime.Format("2006-01-02 15:04:05.999999999 -0700 MST"))
+							if _, err := f.WriteString((*h.JIDs)[uid].EndTime.Format("2006-01-02 15:04:05.999999999 -0700 MST"))
 						}
 						for _, ct := range pod.Spec.Containers {
 							exitCode, err := getExitCode(h.Ctx, path, ct.Name, exitCodeMatch, sessionContextMessage)
@@ -195,7 +203,7 @@ func (h *SidecarHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 								log.G(h.Ctx).Error(err)
 								continue
 							}
-							containerStatus := v1.ContainerStatus{Name: ct.Name, State: v1.ContainerState{Terminated: &v1.ContainerStateTerminated{StartedAt: metav1.Time{Time: (*h.JIDs)[uid].StartTime}, FinishedAt: metav1.Time{Time: (*h.JIDs)[uid].EndTime}, ExitCode: int32(exitCode)}}, Ready: false}
+							containerStatus := v1.ContainerStatus{Name: ct.Name, State: v1.ContainerState{Terminated: &v1.ContainerStateTerminated{StartedAt: metav1.Time{Time: (*h.JIDs)[uid].StartTime}, FinishedAt: metav1.Time{Time: (*h.JIDs)[uid].EndTime}, ExitCode: exitCode}}, Ready: false}
 							containerStatuses = append(containerStatuses, containerStatus)
 						}
 						resp = append(resp, commonIL.PodStatus{PodName: pod.Name, PodUID: string(pod.UID), PodNamespace: pod.Namespace, Containers: containerStatuses})
@@ -208,7 +216,7 @@ func (h *SidecarHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 								h.handleError(spanCtx, w, statusCode, err)
 								return
 							}
-							f.WriteString((*h.JIDs)[uid].StartTime.Format("2006-01-02 15:04:05.999999999 -0700 MST"))
+							if _, err := f.WriteString((*h.JIDs)[uid].StartTime.Format("2006-01-02 15:04:05.999999999 -0700 MST"))
 						}
 						for _, ct := range pod.Spec.Containers {
 							// Check probe status for container readiness
@@ -235,7 +243,7 @@ func (h *SidecarHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 								h.handleError(spanCtx, w, statusCode, err)
 								return
 							}
-							f.WriteString((*h.JIDs)[uid].EndTime.Format("2006-01-02 15:04:05.999999999 -0700 MST"))
+							if _, err := f.WriteString((*h.JIDs)[uid].EndTime.Format("2006-01-02 15:04:05.999999999 -0700 MST"))
 						}
 						for _, ct := range pod.Spec.Containers {
 							exitCode, err := getExitCode(h.Ctx, path, ct.Name, exitCodeMatch, sessionContextMessage)
@@ -262,7 +270,7 @@ func (h *SidecarHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 								h.handleError(spanCtx, w, statusCode, err)
 								return
 							}
-							f.WriteString((*h.JIDs)[uid].EndTime.Format("2006-01-02 15:04:05.999999999 -0700 MST"))
+							if _, err := f.WriteString((*h.JIDs)[uid].EndTime.Format("2006-01-02 15:04:05.999999999 -0700 MST"))
 						}
 						for _, ct := range pod.Spec.Containers {
 							exitCode, err := getExitCode(h.Ctx, path, ct.Name, exitCodeMatch, sessionContextMessage)
@@ -283,7 +291,7 @@ func (h *SidecarHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 								h.handleError(spanCtx, w, statusCode, err)
 								return
 							}
-							f.WriteString((*h.JIDs)[uid].StartTime.Format("2006-01-02 15:04:05.999999999 -0700 MST"))
+							if _, err := f.WriteString((*h.JIDs)[uid].StartTime.Format("2006-01-02 15:04:05.999999999 -0700 MST"))
 						}
 						for _, ct := range pod.Spec.Containers {
 							// Check probe status for container readiness
@@ -314,7 +322,7 @@ func (h *SidecarHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 								h.handleError(spanCtx, w, statusCode, err)
 								return
 							}
-							f.WriteString((*h.JIDs)[uid].EndTime.Format("2006-01-02 15:04:05.999999999 -0700 MST"))
+							if _, err := f.WriteString((*h.JIDs)[uid].EndTime.Format("2006-01-02 15:04:05.999999999 -0700 MST"))
 						}
 						for _, ct := range pod.Spec.Containers {
 							exitCode, err := getExitCode(h.Ctx, path, ct.Name, exitCodeMatch, sessionContextMessage)
@@ -335,7 +343,7 @@ func (h *SidecarHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 								h.handleError(spanCtx, w, statusCode, err)
 								return
 							}
-							f.WriteString((*h.JIDs)[uid].EndTime.Format("2006-01-02 15:04:05.999999999 -0700 MST"))
+							if _, err := f.WriteString((*h.JIDs)[uid].EndTime.Format("2006-01-02 15:04:05.999999999 -0700 MST"))
 						}
 						for _, ct := range pod.Spec.Containers {
 							exitCode, err := getExitCode(h.Ctx, path, ct.Name, exitCodeMatch, sessionContextMessage)

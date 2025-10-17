@@ -75,7 +75,9 @@ func (h *GenericHandler) SubmitHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(statusCode)
 	commonIL.SetDurationSpan(start, span, commonIL.WithHTTPReturnCode(statusCode))
-	w.Write(responseBytes)
+	if _, err := w.Write(responseBytes); err != nil {
+		log.G(spanCtx).Error("Failed to write response: ", err)
+	}
 }
 
 // StatusHandler handles pod status requests
@@ -115,7 +117,11 @@ func (h *GenericHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(info))
+		if _, err := w.Write([]byte(info)); err != nil {
+
+			log.G(spanCtx).Error("Failed to write response: ", err)
+
+		}
 		return
 	}
 
@@ -216,11 +222,15 @@ func (h *GenericHandler) GetLogsHandler(w http.ResponseWriter, r *http.Request) 
 	}()
 
 	w.WriteHeader(statusCode)
-	io.Copy(w, reader)
+	if _, err := io.Copy(w, reader); err != nil {
+
+		log.G(spanCtx).Error("Failed to copy logs: ", err)
+
+	}
 }
 
 // SystemInfoHandler handles system info requests
-func (h *GenericHandler) SystemInfoHandler(w http.ResponseWriter, r *http.Request) {
+func (h *GenericHandler) SystemInfoHandler(w http.ResponseWriter, _ *http.Request) {
 	start := time.Now().UnixMicro()
 	tracer := otel.Tracer("interlink-API")
 	spanCtx, span := tracer.Start(h.Ctx, "SystemInfo", trace.WithAttributes(
@@ -239,7 +249,11 @@ func (h *GenericHandler) SystemInfoHandler(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(info))
+	if _, err := w.Write([]byte(info)); err != nil {
+
+		log.G(spanCtx).Error("Failed to write response: ", err)
+
+	}
 }
 
 // handleError logs an error and writes an HTTP error response

@@ -34,7 +34,7 @@ func NewSlurmBackend(ctx context.Context, config *slurm.SlurmConfig, jids *map[s
 }
 
 // Submit implements the BatchSystem interface for SLURM
-func (s *SlurmBackend) Submit(ctx context.Context, podData *commonIL.RetrievedPodData) (string, error) {
+func (s *SlurmBackend) Submit(_ context.Context, podData *commonIL.RetrievedPodData) (string, error) {
 	body, err := json.Marshal(podData)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal pod data: %w", err)
@@ -49,7 +49,10 @@ func (s *SlurmBackend) Submit(ctx context.Context, podData *commonIL.RetrievedPo
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return "", fmt.Errorf("submit failed with status %d and failed to read body: %w", resp.StatusCode, err)
+		}
 		return "", fmt.Errorf("submit failed with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
@@ -67,7 +70,7 @@ func (s *SlurmBackend) Submit(ctx context.Context, podData *commonIL.RetrievedPo
 }
 
 // Status implements the BatchSystem interface for SLURM
-func (s *SlurmBackend) Status(ctx context.Context, pods []*v1.Pod) ([]commonIL.PodStatus, error) {
+func (s *SlurmBackend) Status(_ context.Context, pods []*v1.Pod) ([]commonIL.PodStatus, error) {
 	body, err := json.Marshal(pods)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal pods: %w", err)
@@ -82,7 +85,10 @@ func (s *SlurmBackend) Status(ctx context.Context, pods []*v1.Pod) ([]commonIL.P
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("status request failed with status %d and failed to read body: %w", resp.StatusCode, err)
+		}
 		return nil, fmt.Errorf("status request failed with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
@@ -100,7 +106,7 @@ func (s *SlurmBackend) Status(ctx context.Context, pods []*v1.Pod) ([]commonIL.P
 }
 
 // Cancel implements the BatchSystem interface for SLURM
-func (s *SlurmBackend) Cancel(ctx context.Context, podUID string) error {
+func (s *SlurmBackend) Cancel(_ context.Context, podUID string) error {
 	// Create a minimal pod structure with just the UID
 	pod := v1.Pod{}
 	pod.UID = types.UID(podUID)
@@ -119,7 +125,10 @@ func (s *SlurmBackend) Cancel(ctx context.Context, podUID string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
 		return fmt.Errorf("cancel failed with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
@@ -169,7 +178,10 @@ func (s *SlurmBackend) SystemInfo(ctx context.Context) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
 		return "", fmt.Errorf("system info request failed with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
@@ -183,14 +195,12 @@ func (s *SlurmBackend) SystemInfo(ctx context.Context) (string, error) {
 
 // CreateDirectories implements the BatchSystem interface for SLURM
 func (s *SlurmBackend) CreateDirectories() error {
-	s.handler.CreateDirectories()
-	return nil
+	return s.handler.CreateDirectories()
 }
 
 // LoadJobs implements the BatchSystem interface for SLURM
 func (s *SlurmBackend) LoadJobs() error {
-	s.handler.LoadJIDs()
-	return nil
+	return s.handler.LoadJIDs()
 }
 
 // GetJobID implements the BatchSystem interface for SLURM
